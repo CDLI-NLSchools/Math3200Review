@@ -2266,52 +2266,128 @@ E("u4-other-ratios", 4, ["7.18"], 2, "gen", function () {
     { gk: gk, ak: ak, quad: quad });
 });
 
-/* ---- 7.19, 7.15: problem solving with ratios, each with its diagram ---- */
+/* ---- 7.19, 7.15: problems in the standard-position and unit-circle setting, each with its diagram ---- */
 E("u4-ratio-problem", 4, ["7.19", "7.15"], 2, "gen", function () {
-  var mode = pick(["kite", "shadow", "light", "ladder", "wire"]);
+  var QN = ["I", "II", "III", "IV"];
+  var DEFS = { sin: "\\frac{y}{r}", cos: "\\frac{x}{r}", tan: "\\frac{y}{x}", csc: "\\frac{r}{y}", sec: "\\frac{r}{x}", cot: "\\frac{x}{y}" };
+  function figP(x, y, lab) { /* terminal arm to P with a custom label and dashed coordinate drops */
+    var r = Math.sqrt(x * x + y * y), cx = 88, cy = 88, R = 64;
+    var px = cx + R * x / r, py = cy - R * y / r;
+    var out = '<svg viewBox="0 0 176 176" width="176" height="176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Terminal arm with point P">';
+    out += '<line x1="8" y1="' + cy + '" x2="168" y2="' + cy + '" stroke="' + FIG_INK + '" stroke-width="1"/>';
+    out += '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="168" stroke="' + FIG_INK + '" stroke-width="1"/>';
+    out += '<line x1="' + fmt(px, 1) + '" y1="' + fmt(py, 1) + '" x2="' + fmt(px, 1) + '" y2="' + cy + '" stroke="' + FIG_INK + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
+    out += '<line x1="' + fmt(px, 1) + '" y1="' + fmt(py, 1) + '" x2="' + cx + '" y2="' + fmt(py, 1) + '" stroke="' + FIG_INK + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
+    out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + fmt(px, 1) + '" y2="' + fmt(py, 1) + '" stroke="' + FIG_INK + '" stroke-width="2.2"/>';
+    out += '<circle cx="' + fmt(px, 1) + '" cy="' + fmt(py, 1) + '" r="3.2" fill="' + FIG_ALT + '"/>';
+    out += _txt(px + (x >= 0 ? 8 : -8), py - 10, lab, 12, true, x >= 0 ? "start" : "end");
+    return out + '</svg>';
+  }
+  var mode = pick(["A", "A", "B", "C", "D"]);
   var q;
-  if (mode === "kite") {
-    var L = pick([25, 30, 40, 50, 60, 80]), ang = pick([30, 45, 60]), h = L * Math.sin(ang * Math.PI / 180);
-    q = numq("A kite is flying at the end of a " + L + " m string. The string is taut and makes an angle of " + ang + "° with the horizontal. What is the height of the kite above the ground, to the nearest tenth of a metre?",
-      Math.round(h * 10) / 10, 0.06,
-      "The string is the hypotenuse and the height is opposite the " + ang + "° angle: \\[ \\begin{aligned} \\sin(" + ang + "^\\circ) &= \\frac{h}{" + L + "} \\\\ h &= " + L + "\\sin(" + ang + "^\\circ) \\\\ &\\approx " + fmt(h, 1) + " \\text{ m} \\end{aligned} \\] The height is <b>" + fmt(h, 1) + " m</b>.",
-      { mode: mode, L: L, ang: ang });
-    q.figure = u4triSVG({ hypLab: L + " m", vlab: "?", angLab: ang + "°" });
+  if (mode === "A") {
+    var trA = pick([[3, 4, 5], [6, 8, 10], [9, 12, 15], [12, 16, 20], [5, 12, 13], [10, 24, 26], [15, 20, 25], [8, 15, 17], [16, 30, 34], [7, 24, 25], [14, 48, 50]]);
+    var swapA = Math.random() < 0.5;
+    var axA = swapA ? trA[1] : trA[0], ayA = swapA ? trA[0] : trA[1], RA = trA[2];
+    var qA = ri(1, 4), sxA = (qA === 2 || qA === 3) ? -1 : 1, syA = (qA === 3 || qA === 4) ? -1 : 1;
+    var XA = sxA * axA, YA = syA * ayA;
+    var knownX = Math.random() < 0.5;
+    var kVal = knownX ? XA : YA, uVal = knownX ? YA : XA;
+    var kName = knownX ? "x" : "y", uName = knownX ? "y" : "x";
+    var setupA = "The terminal arm of an angle \\(\\theta\\) in standard position meets the circle \\(x^2 + y^2 = " + (RA * RA) + "\\) at the point \\(P\\), as shown in the diagram. \\(P\\) is in Quadrant " + QN[qA - 1] + ", and the " + kName + "-coordinate of \\(P\\) is " + kVal + ".";
+    var findU = "First find the " + uName + "-coordinate. Since \\(P\\) lies on the circle: \\[ \\begin{aligned} " + uName + "^2 &= " + (RA * RA) + " - " + (kVal * kVal) + " \\\\ &= " + (RA * RA - kVal * kVal) + " \\end{aligned} \\] so \\(" + uName + " = \\pm " + Math.abs(uVal) + "\\), and Quadrant " + QN[qA - 1] + " gives \\(" + uName + " = " + uVal + "\\).";
+    var vA = pick(["ratio", "ratio", "coord", "dec"]);
+    if (vA === "coord") {
+      q = numq(setupA + " What is the " + uName + "-coordinate of \\(P\\)?",
+        uVal, 0.01,
+        findU + " The " + uName + "-coordinate of \\(P\\) is <b>" + uVal + "</b>.",
+        { mode: "A-coord", tr: trA, quad: qA });
+    } else if (vA === "dec") {
+      var kindN = pick(["sin", "cos", "tan"]);
+      var numN = kindN === "cos" ? XA : YA, denN = kindN === "tan" ? XA : RA;
+      var valN = Math.round(numN / denN * 1000) / 1000;
+      q = numq(setupA + " What is \\(\\" + kindN + "\\theta\\), to the nearest thousandth?",
+        valN, 0.0011,
+        findU + " Then \\(\\" + kindN + "\\theta = " + DEFS[kindN] + " = " + u4fr(numN, denN) + " \\approx " + fmt(valN, 3) + "\\). The value is <b>" + fmt(valN, 3) + "</b>.",
+        { mode: "A-dec", kind: kindN, tr: trA, quad: qA });
+    } else {
+      var kindA = pick(u4KINDS);
+      var valsA = { sin: [YA, RA], cos: [XA, RA], tan: [YA, XA], csc: [RA, YA], sec: [RA, XA], cot: [XA, YA] };
+      var aStrA = u4fr(valsA[kindA][0], valsA[kindA][1]);
+      var corrA = "\\(" + aStrA + "\\)";
+      var candsA = u4KINDS.map(function (k2) { return "\\(" + u4fr(valsA[k2][0], valsA[k2][1]) + "\\)"; });
+      candsA.push("\\(" + u4fr(-valsA[kindA][0], valsA[kindA][1]) + "\\)", "\\(" + u4fr(valsA[kindA][1], valsA[kindA][0]) + "\\)");
+      q = mcq(setupA + " What is the exact value of \\(\\" + kindA + "\\theta\\)?",
+        corrA, u4dist3(corrA, candsA),
+        findU + " So \\(P = (" + XA + ", " + YA + ")\\) with \\(r = " + RA + "\\): \\[ \\begin{aligned} \\" + kindA + "\\theta &= " + DEFS[kindA] + " \\\\ &= " + aStrA + " \\end{aligned} \\] The exact value is <b>" + corrA + "</b>.",
+        { mode: "A-ratio", kind: kindA, tr: trA, quad: qA });
+    }
+    q.figure = figP(XA, YA, knownX ? "P(" + XA + ", ?)" : "P(?, " + YA + ")");
     return q;
   }
-  if (mode === "shadow") {
-    var hb = pick([10, 12, 15, 18, 20, 24, 30]), angB = pick([30, 45, 60]), sh = hb / Math.tan(angB * Math.PI / 180);
-    q = numq("A building is " + hb + " m tall. The sun's rays make an angle of " + angB + "° with the ground. What is the length of the building's shadow, to the nearest tenth of a metre?",
-      Math.round(sh * 10) / 10, 0.06,
-      "The height is opposite the " + angB + "° angle and the shadow is adjacent to it: \\[ \\begin{aligned} \\tan(" + angB + "^\\circ) &= \\frac{" + hb + "}{s} \\\\ s &= \\frac{" + hb + "}{\\tan(" + angB + "^\\circ)} \\\\ &\\approx " + fmt(sh, 1) + " \\text{ m} \\end{aligned} \\] The shadow is <b>" + fmt(sh, 1) + " m</b> long.",
-      { mode: mode, hb: hb, ang: angB });
-    q.figure = u4triSVG({ vlab: hb + " m", hlab: "?", angLab: angB + "°" });
+  if (mode === "B") {
+    var degB = pick(u4DEGS);
+    var askXB = Math.random() < 0.5, radB = Math.random() < 0.4;
+    var exXB = u4exact("cos", degB), exYB = u4exact("sin", degB);
+    var keyB = askXB ? exXB.s : exYB.s, othB = askXB ? exYB.s : exXB.s;
+    var corrB = "\\(" + keyB + "\\)";
+    var negB = keyB === "0" ? null : "\\(" + (keyB.charAt(0) === "-" ? keyB.slice(1) : "-" + keyB) + "\\)";
+    var candsB = ["\\(" + othB + "\\)", negB, "\\(1\\)", "\\(-1\\)", "\\(0\\)", "\\(\\frac{1}{2}\\)", "\\(-\\frac{1}{2}\\)", "\\(\\frac{\\sqrt{2}}{2}\\)", "\\(-\\frac{\\sqrt{2}}{2}\\)", "\\(\\frac{\\sqrt{3}}{2}\\)", "\\(-\\frac{\\sqrt{3}}{2}\\)"];
+    var angB = radB ? u4radS(degB) : degB + "^\\circ";
+    q = mcq("The terminal arm of \\(\\theta = " + angB + "\\) meets the unit circle at the point \\(P\\), as shown in the diagram. What is the " + (askXB ? "x" : "y") + "-coordinate of \\(P\\)?",
+      corrB, u4dist3(corrB, candsB),
+      "On the unit circle, \\(P = (\\cos\\theta, \\sin\\theta)\\). For \\(\\theta = " + angB + "\\), \\(\\cos\\theta = " + exXB.s + "\\) and \\(\\sin\\theta = " + exYB.s + "\\), so \\(P = \\left(" + exXB.s + ", " + exYB.s + "\\right)\\). The " + (askXB ? "x" : "y") + "-coordinate is <b>" + corrB + "</b>.",
+      { mode: "B", deg: degB, askX: askXB, rad: radB });
+    q.figure = u4armSVG(degB);
     return q;
   }
-  if (mode === "light") {
-    var hl = pick([18, 24, 30, 36, 45, 60]), angL = pick([30, 45, 60]), dist = hl / Math.tan(angL * Math.PI / 180);
-    q = numq("From the top of a lighthouse " + hl + " m above the water, the angle of depression of a boat is " + angL + "°. How far is the boat from the base of the lighthouse, to the nearest tenth of a metre?",
-      Math.round(dist * 10) / 10, 0.06,
-      "The angle of depression equals the angle of elevation from the boat. The height is opposite the " + angL + "° angle and the distance is adjacent to it: \\[ \\begin{aligned} \\tan(" + angL + "^\\circ) &= \\frac{" + hl + "}{d} \\\\ d &= \\frac{" + hl + "}{\\tan(" + angL + "^\\circ)} \\\\ &\\approx " + fmt(dist, 1) + " \\text{ m} \\end{aligned} \\] The boat is <b>" + fmt(dist, 1) + " m</b> from the base.",
-      { mode: mode, hl: hl, ang: angL });
-    q.figure = u4triSVG({ dep: true, vlab: hl + " m", hlab: "?", angLab: angL + "°" });
+  if (mode === "C") {
+    var ctxC = pick([
+      ["A point \\(P\\) is marked on the rim of a Ferris wheel", [6, 8, 10, 12, 14, 15, 16, 20]],
+      ["A point \\(P\\) is marked at the tip of a wind turbine blade", [18, 20, 24, 25, 30, 32, 36, 40]],
+      ["A point \\(P\\) is marked on the rim of a water wheel", [2, 3, 4, 5, 6, 8]],
+      ["A point \\(P\\) is marked at the end of a rotating arm on a carnival ride", [4, 5, 6, 7, 8, 9, 10, 12]]
+    ]);
+    var rC = pick(ctxC[1]);
+    var vertC = Math.random() < 0.5;
+    var degC = vertC ? pick([30, 90, 150, 210, 270, 330]) : pick([0, 60, 120, 180, 240, 300]);
+    var kindC = vertC ? "sin" : "cos";
+    var exC = u4exact(kindC, degC);
+    var ansC = Math.round(rC * exC.v * 100) / 100;
+    var stemC = ctxC[0] + " of radius " + rC + " m. At one instant, the radius from the centre to \\(P\\) makes an angle of \\(\\theta = " + degC + "^\\circ\\) in standard position, as shown in the diagram. ";
+    if (vertC) {
+      q = numq(stemC + "What is the height of \\(P\\) above the level of the centre, in metres? (Give a negative answer if \\(P\\) is below the centre.)",
+        ansC, 0.011,
+        "The height of \\(P\\) is the vertical component of the radius: \\[ \\begin{aligned} h &= r\\sin\\theta \\\\ &= " + rC + "\\sin(" + degC + "^\\circ) \\\\ &= " + rC + "\\left(" + exC.s + "\\right) \\\\ &= " + fmt(ansC, 1) + " \\text{ m} \\end{aligned} \\] The height is <b>" + fmt(ansC, 1) + " m</b>" + (ansC < 0 ? ", so \\(P\\) is below the centre" : "") + ".",
+        { mode: "C-height", deg: degC, r: rC });
+    } else {
+      q = numq(stemC + "How far is \\(P\\) to the right of the vertical line through the centre, in metres? (Give a negative answer if \\(P\\) is to the left of that line.)",
+        ansC, 0.011,
+        "The displacement of \\(P\\) from the centre line is the horizontal component of the radius: \\[ \\begin{aligned} d &= r\\cos\\theta \\\\ &= " + rC + "\\cos(" + degC + "^\\circ) \\\\ &= " + rC + "\\left(" + exC.s + "\\right) \\\\ &= " + fmt(ansC, 1) + " \\text{ m} \\end{aligned} \\] The displacement is <b>" + fmt(ansC, 1) + " m</b>" + (ansC < 0 ? ", so \\(P\\) is to the left of the centre line" : "") + ".",
+        { mode: "C-disp", deg: degC, r: rC });
+    }
+    q.figure = u4armSVG(degC);
     return q;
   }
-  if (mode === "ladder") {
-    var tr = pick([[5, 3, 4], [5, 4, 3], [10, 6, 8], [10, 8, 6], [13, 5, 12], [13, 12, 5], [17, 8, 15], [17, 15, 8], [20, 12, 16], [20, 16, 12], [25, 7, 24], [25, 24, 7]]);
-    q = numq("A ladder " + tr[0] + " m long leans against a vertical wall. The foot of the ladder is " + tr[1] + " m from the wall. How high up the wall does the ladder reach, in metres?",
-      tr[2], 0.05,
-      "The ladder, the wall and the ground form a right triangle, so the height comes from the Pythagorean theorem: \\[ \\begin{aligned} h &= \\sqrt{" + tr[0] + "^2 - " + tr[1] + "^2} \\\\ &= \\sqrt{" + (tr[0] * tr[0] - tr[1] * tr[1]) + "} \\\\ &= " + tr[2] + " \\text{ m} \\end{aligned} \\] The ladder reaches <b>" + tr[2] + " m</b> up the wall.",
-      { mode: mode, tr: tr });
-    q.figure = u4triSVG({ hypLab: tr[0] + " m", hlab: tr[1] + " m", vlab: "?" });
-    return q;
+  var trD = pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25]]);
+  var kD = ri(1, 3);
+  var legXD = pick([trD[0], trD[1]]), legYD = legXD === trD[0] ? trD[1] : trD[0];
+  var qD = ri(1, 4), sxD = (qD === 2 || qD === 3) ? -1 : 1, syD = (qD === 3 || qD === 4) ? -1 : 1;
+  var XD = sxD * legXD * kD, YD = syD * legYD * kD, RD = trD[2] * kD;
+  var gkD = pick(["sin", "cos"]);
+  var givD = gkD === "sin" ? u4fr(YD, RD) : u4fr(XD, RD);
+  var corrD = "\\((" + XD + ", " + YD + ")\\)";
+  var disD = ["\\((" + (-XD) + ", " + YD + ")\\)", "\\((" + XD + ", " + (-YD) + ")\\)", "\\((" + YD + ", " + XD + ")\\)"];
+  var solD;
+  if (gkD === "sin") {
+    solD = "Since \\(\\sin\\theta = \\frac{y}{r}\\) with \\(r = " + RD + "\\): \\[ \\begin{aligned} y &= " + RD + "\\left(" + givD + "\\right) \\\\ &= " + YD + " \\end{aligned} \\] Then \\[ \\begin{aligned} x^2 &= " + (RD * RD) + " - " + (YD * YD) + " \\\\ &= " + (RD * RD - YD * YD) + " \\end{aligned} \\] so \\(x = \\pm " + Math.abs(XD) + "\\), and Quadrant " + QN[qD - 1] + " gives \\(x = " + XD + "\\). The coordinates of \\(P\\) are <b>" + corrD + "</b>.";
+  } else {
+    solD = "Since \\(\\cos\\theta = \\frac{x}{r}\\) with \\(r = " + RD + "\\): \\[ \\begin{aligned} x &= " + RD + "\\left(" + givD + "\\right) \\\\ &= " + XD + " \\end{aligned} \\] Then \\[ \\begin{aligned} y^2 &= " + (RD * RD) + " - " + (XD * XD) + " \\\\ &= " + (RD * RD - XD * XD) + " \\end{aligned} \\] so \\(y = \\pm " + Math.abs(YD) + "\\), and Quadrant " + QN[qD - 1] + " gives \\(y = " + YD + "\\). The coordinates of \\(P\\) are <b>" + corrD + "</b>.";
   }
-  var tw = pick([[13, 12, 5], [13, 5, 12], [17, 15, 8], [17, 8, 15], [25, 24, 7], [25, 7, 24], [10, 8, 6], [10, 6, 8], [5, 4, 3], [5, 3, 4]]);
-  q = numq("A guy wire " + tw[0] + " m long is attached to the top of a pole " + tw[1] + " m tall and anchored to the ground. How far from the base of the pole is the anchor, in metres?",
-    tw[2], 0.05,
-    "The wire, the pole and the ground form a right triangle, so the distance comes from the Pythagorean theorem: \\[ \\begin{aligned} d &= \\sqrt{" + tw[0] + "^2 - " + tw[1] + "^2} \\\\ &= \\sqrt{" + (tw[0] * tw[0] - tw[1] * tw[1]) + "} \\\\ &= " + tw[2] + " \\text{ m} \\end{aligned} \\] The anchor is <b>" + tw[2] + " m</b> from the base.",
-    { mode: mode, tw: tw });
-  q.figure = u4triSVG({ hypLab: tw[0] + " m", vlab: tw[1] + " m", hlab: "?" });
+  q = mcq("The terminal arm of an angle \\(\\theta\\) in standard position meets the circle \\(x^2 + y^2 = " + (RD * RD) + "\\) at the point \\(P\\), as shown in the diagram. If \\(\\" + gkD + "\\theta = " + givD + "\\) and \\(\\theta\\) is in Quadrant " + QN[qD - 1] + ", what are the coordinates of \\(P\\)?",
+    corrD, disD, solD,
+    { mode: "D", gk: gkD, quad: qD, k: kD });
+  q.figure = figP(XD, YD, "P");
   return q;
 });
 
