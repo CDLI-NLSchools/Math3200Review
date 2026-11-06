@@ -1367,7 +1367,7 @@ E("u2-stretch-identify",2,["4.18","4.19"],1,"gen",function(){
     correct,dis,
     dir===0
       ?"A coefficient in front of the function multiplies every \\(y\\)-coordinate (the constant term is part of the function, so it is multiplied too): each point \\((x, y)\\) maps to \\((x, "+u2scaleExpr(n,d,"y")+"))\\). The \\(x\\)-coordinates do not change."
-      :"Changing the input of a function stretches the graph horizontally: to land on the same output, each \\(x\\)-coordinate is multiplied by "+u2coefStr(n,d)+", so each point \\((x, y)\\) maps to \\(("+u2scaleExpr(n,d,"x")+", y)\\) . Notice the equation divides \\(x\\) by that factor, which is why the direction surprises many students.",
+      :"Changing the input of a function stretches the graph horizontally: to land on the same output, each \\(x\\)-coordinate is multiplied by \\("+u2coefStr(n,d)+"\\), so each point \\((x, y)\\) maps to \\(("+u2scaleExpr(n,d,"x")+", y)\\) . Notice the equation divides \\(x\\) by that factor, which is why the direction surprises many students.",
     {base:base,c:c,n:n,d:d,dir:dir});
 });
 E("u2-stretch-point",2,["4.20","4.21"],2,"gen",function(){
@@ -1407,9 +1407,9 @@ E("u2-stretch-equation",2,["4.22"],2,"gen",function(){
       "\\(g(x) = "+u2coefBase(d,n,base)+u2pmFrac(d*c,n)+"\\)",
       "\\(g(x) = "+origD+u2pmFrac(n,d)+"\\)"
     ];
-    return mcq("The graph of \\(y = "+origD+"\\) is stretched vertically by a factor of "+u2coefStr(n,d)+". What is the equation of the image graph?",
+    return mcq("The graph of \\(y = "+origD+"\\) is stretched vertically by a factor of \\("+u2coefStr(n,d)+"\\). What is the equation of the image graph?",
       correct,dis,
-      "A vertical stretch by a factor of "+u2coefStr(n,d)+" multiplies the whole function, including its constant term, by that factor, giving \\(g(x) = "+u2coefBase(n,d,base)+u2pmFrac(n*c,d)+"\\) . Putting the factor inside with the \\(x\\) would stretch the graph horizontally instead.",
+      "A vertical stretch by a factor of \\("+u2coefStr(n,d)+"\\) multiplies the whole function, including its constant term, by that factor, giving \\(g(x) = "+u2coefBase(n,d,base)+u2pmFrac(n*c,d)+"\\) . Putting the factor inside with the \\(x\\) would stretch the graph horizontally instead.",
       {shape:"v",base:base,c:c,n:n,d:d});
   }
   var fac2=pick([[2,1],[3,1],[1,2],[1,3]]);
@@ -1420,9 +1420,9 @@ E("u2-stretch-equation",2,["4.22"],2,"gen",function(){
     "\\(g(x) = "+u2coefBase(sn,sd,base)+u2pmFrac(sn*c,sd)+"\\)",
     "\\(g(x) = "+u2coefBase(sd,sn,base)+u2pmFrac(sd*c,sn)+"\\)"
   ];
-  return mcq("The graph of \\(y = "+origD+"\\) is stretched horizontally by a factor of "+u2coefStr(sn,sd)+". What is the equation of the image graph?",
+  return mcq("The graph of \\(y = "+origD+"\\) is stretched horizontally by a factor of \\("+u2coefStr(sn,sd)+"\\). What is the equation of the image graph?",
     correct2,dis2,
-    "A horizontal stretch by a factor of "+u2coefStr(sn,sd)+" multiplies every \\(x\\)-coordinate by that factor, so the equation must divide \\(x\\) by it, while the constant term stays as it is: \\(g(x) = "+argForm(sd,sn)+u2pm(c)+"\\) . The factor appears with the \\(x\\), not as a coefficient in front of the function.",
+    "A horizontal stretch by a factor of \\("+u2coefStr(sn,sd)+"\\) multiplies every \\(x\\)-coordinate by that factor, so the equation must divide \\(x\\) by it, while the constant term stays as it is: \\(g(x) = "+argForm(sd,sn)+u2pm(c)+"\\) . The factor appears with the \\(x\\), not as a coefficient in front of the function.",
     {shape:"h",base:base,c:c,sn:sn,sd:sd});
 });
 E("u2-full-equation",2,["4.23","4.24"],2,"gen",function(){
@@ -1459,8 +1459,8 @@ E("u2-full-equation",2,["4.23","4.24"],2,"gen",function(){
   var dis=shuffle(errs).slice(0,3);
   var phrases=[];
   if(refl)phrases.push("reflected in the \\(x\\)-axis");
-  if(hasA)phrases.push("stretched vertically by a factor of "+u2coefStr(A[0],A[1]));
-  if(hasB)phrases.push("stretched horizontally by a factor of "+u2coefStr(S[0],S[1]));
+  if(hasA)phrases.push("stretched vertically by a factor of \\("+u2coefStr(A[0],A[1])+"\\)");
+  if(hasB)phrases.push("stretched horizontally by a factor of \\("+u2coefStr(S[0],S[1])+"\\)");
   phrases.push("translated "+Math.abs(h)+" units "+(h>0?"right":"left")+" and "+Math.abs(k)+" units "+(k>0?"up":"down"));
   var desc=phrases.join(", ");
   var solText="Build the equation in the form \\(g(x) = a f(b(x - h)) + k\\). "
@@ -2346,7 +2346,7 @@ E("u4-solve-equation-exact", 4, ["7.34", "7.36"], 2, "gen", function () {
   var disV = bads.map(function (d) { return rad ? "\\(" + u4radS(d) + "\\)" : d + "°"; });
   return mcq("Which value of \\(\\theta\\) is a solution of the equation \\(" + eqn + "\\) for " + domTxt + "?",
     corrV, disV,
-    "Substitute \\(\\theta = " + (rad ? u4radS(good) : good + "°") + "\\): the left side becomes \\(\\" + kind + "(" + (rad ? u4radS(good) : good + "^\\circ") + ") = " + valStr + "\\)" + (form2 ? ", and doubling gives " + u4twoStr(kind, v) : "") + ", which matches the equation. The value <b>" + corrV + "</b> is a solution.",
+    "Substitute \\(\\theta = " + (rad ? u4radS(good) : good + "°") + "\\): the left side becomes \\(\\" + kind + "(" + (rad ? u4radS(good) : good + "^\\circ") + ") = " + valStr + "\\)" + (form2 ? ", and doubling gives \\(" + u4twoStr(kind, v) + "\\)" : "") + ", which matches the equation. The value <b>" + corrV + "</b> is a solution.",
     { mode: "verify", kind: kind, v: valStr, form2: form2, rad: rad });
 });
 
