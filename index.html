@@ -575,7 +575,2414 @@ var UNIT_IND={
 var BANK=[];
 function E(id,unit,indicators,level,kind,gen){BANK.push({id:id,unit:unit,indicators:indicators,level:level,kind:kind,gen:gen});}
 /* BANK-SRC-BEGIN */
-/* Bank source is spliced here by inject_bank.py (skeleton: no entries yet). */
+/* Math 3200 Review bank source. Assembled from tranche1/unit1.js to unit5.js
+   (mid scope, Units 1 to 5). Spliced into index.html by inject_bank.py. */
+
+/* ================= Unit 1: Polynomial Functions ================= */
+/* ================= Unit 1: Polynomial Functions (MA3200.3.1 to 3.13) =================
+   Tranche 1, mid scope. All stems, contexts and values are original.
+   Helpers are prefixed u1; entries register through E(...). */
+
+/* ---------- u1 helpers ---------- */
+function u1PolyS(cf){ /* coefficients, highest degree first, to a polynomial string */
+  var out="", first=true, n=cf.length-1, i, c, p, term;
+  for(i=0;i<cf.length;i++){ c=cf[i]; p=n-i; if(c===0) continue;
+    if(p===0) term=""+Math.abs(c);
+    else { var base=(p===1?"x":"x^"+p); term=(Math.abs(c)===1?base:Math.abs(c)+base); }
+    if(first){ out=(c<0?"-":"")+term; first=false; }
+    else out+=(c<0?" - ":" + ")+term;
+  }
+  return out===""?"0":out;
+}
+function u1EvalC(cf,x){ var s=0,i; for(i=0;i<cf.length;i++) s=s*x+cf[i]; return s; }
+function u1Synth(cf,a){ var b=[cf[0]], i; for(i=1;i<cf.length;i++) b.push(cf[i]+a*b[i-1]); var r=b.pop(); return {q:b, r:r}; }
+function u1MulLin(cf,r){ var out=[], i; for(i=0;i<cf.length;i++){ out[i]=(out[i]||0)+cf[i]; out[i+1]=(out[i+1]||0)-r*cf[i]; } return out; }
+function u1FromRoots(a,roots){ var cf=[a]; roots.forEach(function(rm){ for(var k=0;k<rm[1];k++) cf=u1MulLin(cf, rm[0]); }); return cf; }
+function u1FacS(r){ if(r===0) return "x"; return r>0?"(x - "+r+")":"(x + "+(-r)+")"; }
+function u1FactoredS(a,roots){ var s=(a===1?"":a===-1?"-":""+a); roots.forEach(function(rm){ s+=u1FacS(rm[0])+(rm[1]>1?"^"+rm[1]:""); }); return s; }
+function u1JoinSigned(nums){ var out=""; nums.forEach(function(v,i){ if(i===0) out=""+v; else out+=(v<0?" - "+(-v):" + "+v); }); return out; }
+function u1SubstS(cf,x){ /* polynomial string with the variable replaced by (x) */
+  var out="", first=true, n=cf.length-1, i, c, p, term;
+  for(i=0;i<cf.length;i++){ c=cf[i]; p=n-i; if(c===0) continue;
+    if(p===0) term=""+Math.abs(c);
+    else { var base="("+x+")"+(p>1?"^"+p:""); term=(Math.abs(c)===1?base:Math.abs(c)+base); }
+    if(first){ out=(c<0?"-":"")+term; first=false; }
+    else out+=(c<0?" - ":" + ")+term;
+  }
+  return out===""?"0":out;
+}
+function u1EvalBlock(cf,x,label){ /* centred aligned evaluation of a polynomial at x */
+  var vals=[], n=cf.length-1, i, c, p;
+  for(i=0;i<cf.length;i++){ c=cf[i]; p=n-i; if(c===0) continue; vals.push(c*Math.pow(x,p)); }
+  return "\\[ \\begin{aligned} "+label+"("+x+") &= "+u1SubstS(cf,x)+" \\\\ &= "+u1JoinSigned(vals)+" \\\\ &= "+u1EvalC(cf,x)+" \\end{aligned} \\]";
+}
+function u1Tableau(cf,a){ /* synthetic division tableau as a KaTeX array */
+  var sy=u1Synth(cf,a), q=sy.q, n=cf.length, cols="r|", i;
+  for(i=0;i<n;i++) cols+="r";
+  var prods=q.map(function(v){ return a*v; });
+  return "\\[ \\begin{array}{"+cols+"} "+a+" & "+cf.join(" & ")+" \\\\ & & "+prods.join(" & ")+" \\\\ \\hline & "+q.join(" & ")+" & "+sy.r+" \\end{array} \\]";
+}
+function u1DivResultS(q,R,a){ /* quotient-plus-remainder form as a string */
+  var s=u1PolyS(q); if(R===0) return s;
+  var den="x"+(a>0?" - "+a:" + "+(-a));
+  return s+(R>0?" + ":" - ")+"\\frac{"+Math.abs(R)+"}{"+den+"}";
+}
+function u1EndClause(deg,a){
+  if(deg%2===1) return a>0?"the left end falls and the right end rises":"the left end rises and the right end falls";
+  return a>0?"both ends rise":"both ends fall";
+}
+function u1Plot(fn,x0,x1,o){ /* axes-and-curve SVG, y-range fitted from samples and capped */
+  o=o||{}; var W=440,H=250,pad=26,i,x,y,mn=1e18,mx=-1e18;
+  for(i=0;i<=200;i++){ x=x0+(x1-x0)*i/200; y=fn(x); if(isFinite(y)){ if(y<mn)mn=y; if(y>mx)mx=y; } }
+  var y1=(o.y1!==undefined)?o.y1:Math.min(90,Math.max(12,Math.ceil(mx*1.2)));
+  var y0=(o.y0!==undefined)?o.y0:Math.max(-90,Math.min(-12,Math.floor(mn*1.2)));
+  var X=function(v){ return pad+(v-x0)/(x1-x0)*(W-2*pad); };
+  var Y=function(v){ return H-pad-(v-y0)/(y1-y0)*(H-2*pad); };
+  var out='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:440px;background:#fff;border:1px solid #d8d2c4;border-radius:6px" xmlns="http://www.w3.org/2000/svg">';
+  var gy=(y1-y0>90)?20:((y1-y0>45)?10:((y1-y0>22)?5:2)), gx, gyv;
+  for(gx=Math.ceil(x0);gx<=x1;gx+=1){ out+='<line x1="'+fmt(X(gx),1)+'" y1="'+pad+'" x2="'+fmt(X(gx),1)+'" y2="'+(H-pad)+'" stroke="#eae5d6" stroke-width="1"/>';
+    out+='<text x="'+fmt(X(gx),1)+'" y="'+(H-6)+'" font-size="9" fill="#5a5344" text-anchor="middle">'+gx+'</text>'; }
+  for(gyv=Math.ceil(y0/gy)*gy;gyv<=y1;gyv+=gy){ out+='<line x1="'+pad+'" y1="'+fmt(Y(gyv),1)+'" x2="'+(W-pad)+'" y2="'+fmt(Y(gyv),1)+'" stroke="#eae5d6" stroke-width="1"/>';
+    if(gyv!==0) out+='<text x="'+(pad-4)+'" y="'+fmt(Y(gyv)+3,1)+'" font-size="9" fill="#5a5344" text-anchor="end">'+gyv+'</text>'; }
+  if(y0<0&&y1>0) out+='<line x1="'+pad+'" y1="'+fmt(Y(0),1)+'" x2="'+(W-pad)+'" y2="'+fmt(Y(0),1)+'" stroke="#17352a" stroke-width="1.3"/>';
+  if(x0<0&&x1>0) out+='<line x1="'+fmt(X(0),1)+'" y1="'+pad+'" x2="'+fmt(X(0),1)+'" y2="'+(H-pad)+'" stroke="#17352a" stroke-width="1.3"/>';
+  out+='<text x="'+(W-pad-2)+'" y="'+fmt(Y(0)-6,1)+'" font-size="12" fill="#17352a" text-anchor="end">x</text>';
+  out+='<text x="'+fmt(X(0)+6,1)+'" y="'+(pad-8)+'" font-size="12" fill="#17352a">y</text>';
+  var pts=[], N=160;
+  for(i=0;i<=N;i++){ x=x0+(x1-x0)*i/N; y=fn(x); if(y<y0)y=y0; if(y>y1)y=y1; pts.push(fmt(X(x),1)+","+fmt(Y(y),1)); }
+  out+='<polyline points="'+pts.join(" ")+'" fill="none" stroke="#0f766e" stroke-width="2.2"/>';
+  (o.points||[]).forEach(function(p){ out+='<circle cx="'+fmt(X(p[0]),1)+'" cy="'+fmt(Y(p[1]),1)+'" r="3.6" fill="#b3541e"/>'; });
+  return out+'</svg>';
+}
+
+/* ---------- 3.2: quotient by synthetic division (L1) ---------- */
+E("u1-divide-quotient",1,["3.2"],1,"gen",function(){
+  var att=0, cf, a, sy;
+  while(att<200){
+    att++;
+    cf=[pick([1,2,3,-1,-2]), ri(-9,9), ri(-9,9), ri(-9,9)];
+    a=pick([-4,-3,-2,-1,1,2,3,4]);
+    sy=u1Synth(cf,a);
+    if(sy.r!==0) break;
+  }
+  if(sy.r===0){ cf=[1,0,-7,0]; a=2; sy=u1Synth(cf,a); }
+  var q=sy.q, R=sy.r, key=u1PolyS(q);
+  var pool=[ u1PolyS(u1Synth(cf,-a).q), u1PolyS([q[0],q[1],q[2]+R]), u1PolyS([q[0],q[1],q[2]+2]), u1PolyS([q[0]+1,q[1],q[2]]), u1PolyS([q[0],-q[1],q[2]]) ];
+  var dis=[], seen={};
+  pool.forEach(function(s){ if(s!==key && !seen[s]){ seen[s]=1; dis.push(s); } });
+  dis=dis.slice(0,3).map(function(s){ return "\\("+s+"\\)"; });
+  return mcq("Using synthetic division to divide \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\) gives which <b>quotient</b>?",
+    "\\("+key+"\\)", dis,
+    "Synthetic division by \\("+u1FacS(a)+"\\) uses \\("+a+"\\) in the tableau:"+
+    u1Tableau(cf,a)+
+    "The bottom row, before the remainder, gives the quotient coefficients \\("+q.join(", ")+"\\), one degree lower than \\(P(x)\\). So the quotient is \\("+key+"\\) and the remainder is \\("+R+"\\).",
+    {a:a, R:R});
+});
+
+/* ---------- 3.3: remainder from the remainder theorem (L1) ---------- */
+E("u1-remainder-value",1,["3.3"],1,"gen",function(){
+  var deg=pick([3,3,4]), cf=[], i;
+  cf.push(pick([1,2,3,4,-2,-3]));
+  for(i=1;i<=deg;i++) cf.push(ri(-9,9));
+  var a=pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var R=u1EvalC(cf,a);
+  return numq("When \\(P(x) = "+u1PolyS(cf)+"\\) is divided by \\("+u1FacS(a)+"\\), what is the <b>remainder</b>?",
+    R, 0.001,
+    "By the remainder theorem, the remainder when \\(P(x)\\) is divided by \\("+u1FacS(a)+"\\) is \\(P("+a+")\\)."+
+    u1EvalBlock(cf,a,"P")+
+    "So the remainder is <b>"+R+"</b>.",
+    {a:a, R:R});
+});
+
+/* ---------- 3.6: identify a polynomial function (L1) ---------- */
+E("u1-identify-polynomial",1,["3.6"],1,"gen",function(){
+  var form=ri(1,4), correct, why;
+  if(form===1){ var cf=[pick([1,2,3,-2]), ri(-8,8), ri(-8,8), ri(-9,9)]; if(ri(0,1)) cf.push(ri(-9,9));
+    correct="\\(f(x) = "+u1PolyS(cf)+"\\)"; why="it is a sum of terms with whole-number exponents"; }
+  else if(form===2){ var r1=ri(-4,4), r2=ri(-4,4); while(r2===r1) r2=ri(-4,4);
+    correct="\\(f(x) = "+u1FactoredS(pick([1,2,-1]),[[r1,1],[r2,1]])+"\\)"; why="it expands to a sum of terms with whole-number exponents"; }
+  else if(form===3){ var la=ri(2,7), lb=ri(-12,12); while(lb===0) lb=ri(-12,12);
+    correct="\\(f(x) = "+la+"x "+(lb>0?"+ ":"- ")+Math.abs(lb)+"\\)"; why="it is a sum of terms with whole-number exponents"; }
+  else { correct="\\(f(x) = "+ri(3,20)+"\\)"; why="a constant is a polynomial of degree 0"; }
+  var pool=[
+    function(){ var k=ri(2,6), b=ri(1,8); return {s:"\\(f(x) = "+k+"\\sqrt{x} - "+b+"\\)", r:"a square root of the variable"}; },
+    function(){ var k=ri(2,9), b=ri(1,9); return {s:"\\(f(x) = \\frac{"+k+"}{x} + "+b+"\\)", r:"the variable in a denominator"}; },
+    function(){ var b=ri(2,6); return {s:"\\(f(x) = "+b+"^x\\)", r:"the variable in the exponent"}; },
+    function(){ var b=ri(1,6); return {s:"\\(f(x) = x^{-2} + "+b+"x\\)", r:"a negative exponent on the variable"}; },
+    function(){ var b=ri(1,6); return {s:"\\(f(x) = \\left|x - "+b+"\\right|\\)", r:"an absolute value, which no polynomial can reproduce"}; },
+    function(){ var b=ri(1,5); return {s:"\\(f(x) = \\sin x + "+b+"\\)", r:"a trigonometric function of the variable"}; },
+    function(){ var b=ri(1,6), c=ri(1,6); return {s:"\\(f(x) = \\frac{x + "+b+"}{x - "+c+"}\\)", r:"a ratio of polynomials, not a single polynomial"}; }
+  ];
+  var idx=shuffle([0,1,2,3,4,5,6]).slice(0,3), dis=[], reasons=[];
+  idx.forEach(function(i){ var d=pool[i](); dis.push(d.s); reasons.push(d.r); });
+  return mcq("Which function is a <b>polynomial function</b>?",
+    correct, dis,
+    "A polynomial function is built from terms where the variable appears only with whole-number exponents: no roots of the variable, no variable in a denominator, and no variable in an exponent. The correct choice qualifies because "+why+". The others involve "+reasons.join("; ")+".",
+    {form:form});
+});
+
+/* ---------- 3.8: end behaviour from an equation (L1) ---------- */
+E("u1-end-behaviour",1,["3.8"],1,"gen",function(){
+  var deg=ri(1,6), cf=[pick([-5,-4,-3,-2,-1,1,2,3,4,5])], i;
+  for(i=1;i<=deg;i++) cf.push(ri(-9,9));
+  var a=cf[0], odd=(deg%2===1);
+  var S={
+    "odd+":"As \\(x \\to -\\infty\\), \\(f(x) \\to -\\infty\\), and as \\(x \\to \\infty\\), \\(f(x) \\to \\infty\\)",
+    "odd-":"As \\(x \\to -\\infty\\), \\(f(x) \\to \\infty\\), and as \\(x \\to \\infty\\), \\(f(x) \\to -\\infty\\)",
+    "even+":"As \\(x \\to -\\infty\\), \\(f(x) \\to \\infty\\), and as \\(x \\to \\infty\\), \\(f(x) \\to \\infty\\)",
+    "even-":"As \\(x \\to -\\infty\\), \\(f(x) \\to -\\infty\\), and as \\(x \\to \\infty\\), \\(f(x) \\to -\\infty\\)"
+  };
+  var key=(odd?(a>0?"odd+":"odd-"):(a>0?"even+":"even-"));
+  var dis=Object.keys(S).filter(function(k){ return k!==key; }).map(function(k){ return S[k]; });
+  return mcq("What is the <b>end behaviour</b> of \\(f(x) = "+u1PolyS(cf)+"\\)?",
+    S[key], dis,
+    "The degree is \\("+deg+"\\), which is "+(odd?"odd":"even")+", and the leading coefficient is \\("+a+"\\), which is "+(a>0?"positive":"negative")+". "+
+    (odd?"An odd degree sends the two ends in opposite directions, and the sign of the leading coefficient decides which end rises.":
+         "An even degree sends both ends the same way, and the sign of the leading coefficient decides whether both rise or both fall.")+
+    " Here: "+S[key]+".",
+    {deg:deg, a:a});
+});
+
+/* ---------- 3.1: how synthetic division relates to long division (L2, var) ---------- */
+E("u1-synthetic-relation",1,["3.1"],2,"var",varset([
+  function(){
+    var a=pick([-3,-2,2,3]);
+    var cf=[pick([1,2,3]), ri(-8,8), ri(-8,8), ri(-8,8)];
+    return mcq("A student uses synthetic division to divide \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\). Which statement about the process is <b>correct</b>?",
+      "The other numbers in the bottom row are the coefficients of the quotient, and the last number is the remainder.",
+      ["The numbers in the bottom row are the zeros of the function.",
+       "Synthetic division gives the same result as long division for any divisor, including quadratic divisors.",
+       "The value placed at the left of the tableau is \\("+(-a)+"\\)."],
+      "Synthetic division is a shortcut for long division by a divisor of the form \\((x - a)\\): the value used is \\("+a+"\\) itself. Each bottom-row entry, except the last, is a coefficient of the quotient, and the last entry is the remainder, exactly as long division would give.",
+      {a:a});
+  },
+  function(){
+    var b=ri(2,5);
+    return mcq("To divide a polynomial by \\((x + "+b+")\\) using synthetic division, what value is placed at the <b>left of the tableau</b>?",
+      ""+(-b), [""+b, "\\(\\frac{1}{"+b+"}\\)", "0"],
+      "The divisor \\((x + "+b+")\\) has the form \\((x - a)\\) with \\(a = "+(-b)+"\\), and it is that value, \\("+(-b)+"\\), that goes at the left of the tableau.",
+      {b:b});
+  },
+  function(){
+    return mcq("Long division and synthetic division of a polynomial by \\((x - a)\\) produce the same quotient and remainder. Why can synthetic division be written so much more briefly?",
+      "It works only with the coefficients, so the variables are omitted and each step is just a multiplication and an addition.",
+      ["It skips the remainder, which long division calculates separately.",
+       "It is only an approximation, used when an exact answer is not needed.",
+       "It first rewrites the divisor as \\((x + a)\\), which shortens the calculation."],
+      "In long division, the variables line up in the same pattern every step, so they carry no new information. Synthetic division drops them, records only the coefficients, and replaces each divide-and-subtract step with a multiply-and-add step. Nothing is skipped or approximated: the quotient and remainder are identical.",
+      {});
+  },
+  function(){
+    var att=0, cf, a, sy;
+    while(att<100){
+      att++;
+      cf=[pick([1,2]), ri(-7,7), ri(-7,7), ri(-7,7)];
+      a=pick([2,3,-2]);
+      sy=u1Synth(cf,a);
+      if(sy.q[2]!==sy.r) break;
+    }
+    if(sy.q[2]===sy.r){ cf=[1,-2,-5,6]; a=2; sy=u1Synth(cf,a); }
+    return mcq("The completed synthetic division of \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\) is shown."+
+      u1Tableau(cf,a)+
+      "Which statement is <b>true</b>?",
+      "The remainder is \\("+sy.r+"\\), so \\(P("+a+") = "+sy.r+"\\).",
+      ["The remainder is \\("+sy.q[2]+"\\), the last coefficient of the quotient.",
+       "\\(P("+(-a)+") = "+sy.r+"\\).",
+       "The quotient is \\("+u1PolyS(u1Synth(cf,-a).q)+"\\)."],
+      "The bottom row of the tableau reads off the quotient coefficients \\("+sy.q.join(", ")+"\\) followed by the remainder \\("+sy.r+"\\). By the remainder theorem, that remainder is the value of the function at the value used in the tableau: \\(P("+a+") = "+sy.r+"\\).",
+      {a:a, R:sy.r});
+  }
+]));
+
+/* ---------- 3.2: full division result for a quartic (L2) ---------- */
+E("u1-divide-result",1,["3.2"],2,"gen",function(){
+  var att=0, cf, a, sy;
+  while(att<200){
+    att++;
+    cf=[pick([1,2,3,-1,-2]), ri(-9,9), ri(-9,9), ri(-9,9), ri(-9,9)];
+    a=pick([-4,-3,-2,-1,1,2,3,4]);
+    sy=u1Synth(cf,a);
+    if(sy.r!==0) break;
+  }
+  if(sy.r===0){ cf=[1,0,-3,0,4]; a=1; sy=u1Synth(cf,a); }
+  var q=sy.q, R=sy.r;
+  var key=u1DivResultS(q,R,a);
+  var alt=u1Synth(cf,-a);
+  var dis=[ u1DivResultS(alt.q, alt.r, a),
+            u1DivResultS(q, -R, a),
+            u1PolyS([q[0],q[1],q[2],q[3]+R]) ];
+  return mcq("Dividing \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\) gives which <b>result</b>?",
+    "\\("+key+"\\)", dis.map(function(s){ return "\\("+s+"\\)"; }),
+    "Synthetic division by \\("+u1FacS(a)+"\\) uses \\("+a+"\\) in the tableau:"+
+    u1Tableau(cf,a)+
+    "The quotient is \\("+u1PolyS(q)+"\\) with remainder \\("+R+"\\), so the result is written as quotient plus remainder over divisor: \\("+key+"\\).",
+    {a:a, R:R});
+});
+
+/* ---------- 3.3: remainder theorem gives a point on the graph (L2) ---------- */
+E("u1-remainder-point",1,["3.3"],2,"gen",function(){
+  var att=0, cf, a, R;
+  while(att<200){
+    att++;
+    cf=[pick([1,2,3,-2]), ri(-8,8), ri(-8,8), ri(-8,8)];
+    a=pick([-4,-3,-2,-1,1,2,3,4]);
+    R=u1EvalC(cf,a);
+    if(R!==0 && R!==a && u1EvalC(cf,-a)!==R && u1EvalC(cf,R)!==a) break;
+  }
+  if(!(R!==0 && R!==a && u1EvalC(cf,-a)!==R && u1EvalC(cf,R)!==a)){ cf=[1,-2,-5,6]; a=2; R=u1EvalC(cf,a); }
+  function pt(x,y){ return "\\(("+x+", "+y+")\\)"; }
+  return mcq("When \\(P(x) = "+u1PolyS(cf)+"\\) is divided by \\("+u1FacS(a)+"\\), the remainder is \\("+R+"\\). Which point lies on the graph of \\(y = P(x)\\)?",
+    pt(a,R), [pt(-a,R), pt(R,a), pt(a,0)],
+    "By the remainder theorem, the remainder on division by \\("+u1FacS(a)+"\\) is the function value \\(P("+a+")\\). So \\(P("+a+") = "+R+"\\), which means the point \\(("+a+", "+R+")\\) lies on the graph.",
+    {a:a, R:R});
+});
+
+/* ---------- 3.4: which binomial is a factor (L2) ---------- */
+E("u1-which-factor",1,["3.4"],2,"gen",function(){
+  var att=0, roots, rk, s, t, lead;
+  while(att<200){
+    att++;
+    var vals=[-5,-4,-3,-2,-1,1,2,3,4,5];
+    roots=shuffle(vals).slice(0,3);
+    var cand=roots.filter(function(r){ return roots.indexOf(-r)<0; });
+    if(!cand.length) continue;
+    rk=cand[0];
+    var rest=vals.filter(function(v){ return roots.indexOf(v)<0 && v!==-rk; });
+    s=rest[ri(0,rest.length-1)];
+    t=rest[ri(0,rest.length-1)];
+    if(t===s) continue;
+    lead=pick([1,1,2]);
+    break;
+  }
+  if(att>=200){ roots=[1,2,-3]; rk=2; s=4; t=-1; lead=1; }
+  var cf=u1FromRoots(lead, roots.map(function(r){ return [r,1]; }));
+  var others=[[-rk,"P("+(-rk)+")"],[s,"P("+s+")"],[t,"P("+t+")"]];
+  var lines=others.map(function(o){ return o[1]+" &= "+u1EvalC(cf,o[0]); }).join(" \\\\ ");
+  return mcq("Which binomial is a <b>factor</b> of \\(P(x) = "+u1PolyS(cf)+"\\)?",
+    "\\("+u1FacS(rk)+"\\)",
+    ["\\("+u1FacS(-rk)+"\\)", "\\("+u1FacS(s)+"\\)", "\\("+u1FacS(t)+"\\)"],
+    "By the factor theorem, \\((x - k)\\) is a factor of \\(P(x)\\) exactly when \\(P(k) = 0\\). Evaluating:"+
+    "\\[ \\begin{aligned} P("+rk+") &= 0 \\\\ "+lines+" \\end{aligned} \\]"+
+    "Only \\(P("+rk+")\\) is zero, so only \\("+u1FacS(rk)+"\\) is a factor.",
+    {rk:rk});
+});
+
+/* ---------- 3.4: find a coefficient from a known factor (L2) ---------- */
+E("u1-find-coefficient",1,["3.4"],2,"gen",function(){
+  var vals=[-5,-4,-3,-2,-1,1,2,3,4,5];
+  var trip=shuffle(vals).slice(0,3), a=trip[0], s=trip[1], t=trip[2];
+  var cf=u1FromRoots(1,[[a,1],[s,1],[t,1]]);
+  var k=cf[1], M=cf[2], N=cf[3];
+  var disp="x^3 + kx^2";
+  if(M!==0) disp+=" "+(M>0?"+ ":"- ")+Math.abs(M)+"x";
+  disp+=" "+(N>0?"+ ":"- ")+Math.abs(N);
+  var sub=""+Math.pow(a,3)+" + k("+Math.pow(a,2)+")"+(M!==0?" "+(M>0?"+ ":"- ")+Math.abs(M)+"("+a+")":"")+" "+(N>0?"+ ":"- ")+Math.abs(N);
+  var rhs=-(Math.pow(a,3)+M*a+N);
+  return numq("\\(P(x) = "+disp+"\\) has a factor \\("+u1FacS(a)+"\\). What is the value of \\(k\\)?",
+    k, 0.001,
+    "By the factor theorem, \\("+u1FacS(a)+"\\) is a factor exactly when \\(P("+a+") = 0\\). Substituting:"+
+    "\\[ \\begin{aligned} P("+a+") &= "+sub+" = 0 \\\\ "+Math.pow(a,2)+"k &= "+rhs+" \\\\ k &= "+k+" \\end{aligned} \\]"+
+    "So \\(k = "+k+"\\) (and indeed \\(P(x) = "+u1PolyS(cf)+"\\)).",
+    {a:a, k:k});
+});
+
+/* ---------- 3.5: zeros from factored form (L2) ---------- */
+E("u1-zeros-from-factors",1,["3.5"],2,"gen",function(){
+  var att=0, roots, lead, S0, S1, S2, S3;
+  function setS(arr){ var c=arr.slice().sort(function(x,y){ return x-y; }); return "\\(\\{"+c.join(", ")+"\\}\\)"; }
+  while(att<200){
+    att++;
+    roots=shuffle([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]).slice(0,3);
+    lead=pick([1,2,3,-1,-2]);
+    S0=setS(roots);
+    S1=setS([-roots[0], roots[1], roots[2]]);
+    S2=setS(roots.map(function(r){ return -r; }));
+    var deltas=[1,-1,2,-2], done=false;
+    for(var di=0; di<deltas.length && !done; di++){
+      var cand=roots.slice(); cand[2]+=deltas[di];
+      if(cand[0]===cand[2] || cand[1]===cand[2]) continue;
+      var cs=setS(cand);
+      if(cs!==S0 && cs!==S1 && cs!==S2){ S3=cs; done=true; }
+    }
+    if(!done) continue;
+    if(S0!==S1 && S0!==S2 && S1!==S2) break;
+  }
+  if(att>=200){ roots=[1,-2,3]; lead=1; S0=setS(roots); S1=setS([-1,-2,3]); S2=setS([-1,2,-3]); S3=setS([1,-2,4]); }
+  var rs=roots.slice().sort(function(x,y){ return x-y; });
+  return mcq("What are the <b>zeros</b> of the function \\(f(x) = "+u1FactoredS(lead, roots.map(function(r){ return [r,1]; }))+"\\)?",
+    S0, [S1, S2, S3],
+    "Setting each linear factor equal to zero: \\("+u1FacS(roots[0])+" = 0\\) gives \\(x = "+roots[0]+"\\), \\("+u1FacS(roots[1])+" = 0\\) gives \\(x = "+roots[1]+"\\), and \\("+u1FacS(roots[2])+" = 0\\) gives \\(x = "+roots[2]+"\\). Watch the signs: the factor \\((x - r)\\) produces the zero \\(r\\). So the zeros are \\("+rs.join(", ")+"\\) .",
+    {roots:rs});
+});
+
+/* ---------- 3.9: zeros, roots and intercepts are the same values (L2) ---------- */
+E("u1-zeros-roots-intercepts",1,["3.9"],2,"gen",function(){
+  var roots=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,3).sort(function(x,y){ return x-y; });
+  var list=roots.join(", "), nlist=roots.map(function(r){ return -r; }).join(", ");
+  var key="The roots of the corresponding polynomial equation are "+list+", and the x-intercepts of the graph are "+list+".";
+  var d1="The roots of the corresponding polynomial equation are "+nlist+", and the x-intercepts of the graph are "+nlist+".";
+  var d2="The roots of the corresponding polynomial equation are "+list+", and the graph crosses the y-axis at the points (0, "+roots[0]+"), (0, "+roots[1]+") and (0, "+roots[2]+").";
+  var d3="The zeros of the function are the y-values of the points where the graph crosses the y-axis.";
+  return mcq("A polynomial function has zeros "+list+". Which statement is <b>correct</b>?",
+    key, [d1, d2, d3],
+    "The zeros of a function, the roots of the corresponding equation \\(P(x) = 0\\), and the x-intercepts of the graph are three names for the same values: here, "+list+". They sit on the x-axis as the points ("+roots[0]+", 0), ("+roots[1]+", 0) and ("+roots[2]+", 0).",
+    {roots:roots});
+});
+
+/* ---------- 3.7: roles of the constant term and leading coefficient (L2) ---------- */
+E("u1-constant-leading",1,["3.7"],2,"gen",function(){
+  var att=0, deg, cf, a, d0, m;
+  while(att<200){
+    att++;
+    deg=pick([3,4]);
+    cf=[pick([2,3,4,-2,-3,-4])];
+    for(var i=1;i<=deg;i++) cf.push(ri(-9,9));
+    a=cf[0]; d0=cf[deg]; m=cf[deg-1];
+    if(d0!==0 && d0!==a && m!==d0 && m!==0) break;
+  }
+  if(att>=200){ deg=3; cf=[2,-3,5,-7]; a=2; d0=-7; m=5; }
+  var clause=u1EndClause(deg,a), wclause=u1EndClause(deg,-a);
+  function stmt(ct, lc, cl){ return "The constant term is \\("+ct+"\\), so the graph crosses the y-axis at \\((0, "+ct+")\\). The leading coefficient is \\("+lc+"\\), so "+cl+"."; }
+  return mcq("For the polynomial function \\(f(x) = "+u1PolyS(cf)+"\\), which statement is <b>correct</b>?",
+    stmt(d0, a, clause),
+    [stmt(m, a, clause), stmt(d0, a, wclause), stmt(a, d0, clause)],
+    "The constant term is the term with no variable: \\("+d0+"\\). Setting \\(x = 0\\) leaves only this term, so the graph crosses the y-axis at \\((0, "+d0+")\\). The leading coefficient is the coefficient of the highest power: \\("+a+"\\). With degree \\("+deg+"\\), "+clause+".",
+    {deg:deg, a:a, d0:d0});
+});
+
+/* ---------- 3.10: multiplicity behaviour read from a graph (L2) ---------- */
+E("u1-multiplicity-graph",1,["3.10"],2,"gen",function(){
+  var pair=shuffle([-4,-3,-2,-1,1,2,3,4]).slice(0,2), rd=pair[0], rs=pair[1];
+  var a=pick([1,-1]);
+  var cf=u1FromRoots(a,[[rd,2],[rs,1]]);
+  var fn=function(x){ return u1EvalC(cf,x); };
+  var x0=Math.min(rd,rs)-3, x1=Math.max(rd,rs)+3;
+  var targetRd=ri(0,1)===0, t=targetRd?rd:rs;
+  var BEH={ cross:"It crosses the x-axis.", touch:"It touches the x-axis and turns around.", flat:"It flattens out and crosses the x-axis.", asym:"It approaches the x-axis but never reaches it." };
+  var correct=targetRd?BEH.touch:BEH.cross;
+  var dis=targetRd?[BEH.cross, BEH.flat, BEH.asym]:[BEH.touch, BEH.flat, BEH.asym];
+  var q=mcq("The graph of \\(f(x) = "+u1FactoredS(a,[[rd,2],[rs,1]])+"\\) is shown. At \\(x = "+t+"\\), what does the graph do?",
+    correct, dis,
+    "The factor \\("+u1FacS(rd)+"\\) appears with multiplicity 2 (an even multiplicity), so at \\(x = "+rd+"\\) the graph touches the x-axis and turns around. The factor \\("+u1FacS(rs)+"\\) has multiplicity 1 (odd), so at \\(x = "+rs+"\\) the graph crosses the x-axis. At \\(x = "+t+"\\) the graph "+(targetRd?"touches the axis and turns around.":"crosses the axis."),
+    {rd:rd, rs:rs, t:t});
+  q.figure=u1Plot(fn, x0, x1, {points:[[rd,0],[rs,0]]});
+  return q;
+});
+
+/* ---------- 3.11: match a feature list to a graph (L2) ---------- */
+E("u1-sketch-features",1,["3.11"],2,"gen",function(){
+  var roots=shuffle([-4,-3,-2,-1,1,2,3,4]).slice(0,3).sort(function(x,y){ return x-y; });
+  var a=pick([1,2,-1,-2]);
+  var cf=u1FromRoots(a, roots.map(function(r){ return [r,1]; }));
+  var fn=function(x){ return u1EvalC(cf,x); };
+  var y0=u1EvalC(cf,0);
+  var clause=u1EndClause(3,a), wclause=u1EndClause(3,-a);
+  function feat(rs, yv, cl){ return "x-intercepts: "+rs.join(", ")+"; y-intercept: "+yv+"; end behaviour: "+cl; }
+  var flipIdx=roots.findIndex(function(r){ return roots.indexOf(-r)<0; });
+  var flipped=roots.slice(); flipped[flipIdx]=-flipped[flipIdx];
+  flipped.sort(function(x,y){ return x-y; });
+  var q=mcq("The graph of a polynomial function is shown. Which list of features matches the graph?",
+    feat(roots, y0, clause),
+    [feat(roots, -y0, clause), feat(roots, y0, wclause), feat(flipped, y0, clause)],
+    "Reading the graph: it crosses the x-axis at "+roots.join(", ")+", so those are the x-intercepts. It crosses the y-axis at \\("+y0+"\\) (the value of the function at \\(x = 0\\)). The function is a cubic with a "+(a>0?"positive":"negative")+" leading coefficient, so "+clause+".",
+    {roots:roots, y0:y0});
+  q.figure=u1Plot(fn, roots[0]-3, roots[2]+3, {points:[[0,y0]]});
+  return q;
+});
+
+/* ---------- 3.10: multiplicity statements from factored form (L3) ---------- */
+E("u1-multiplicity-statements",1,["3.10"],3,"gen",function(){
+  var pair=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,2), p=pair[0], qq=pair[1];
+  var a=pick([1,-1]);
+  var TOUCH="touches the x-axis and turns around", FLAT="flattens out and then crosses the x-axis", CROSS="crosses the x-axis";
+  function stmt(bp, bq){ return "At \\(x = "+p+"\\), the graph "+bp+", and at \\(x = "+qq+"\\), the graph "+bq+"."; }
+  return mcq("Which statement describes the graph of \\(f(x) = "+u1FactoredS(a,[[p,2],[qq,3]])+"\\) at its x-intercepts?",
+    stmt(TOUCH, FLAT),
+    [stmt(FLAT, TOUCH), stmt(TOUCH, CROSS), stmt(CROSS, FLAT)],
+    "Multiplicity decides the behaviour at an intercept. The zero \\("+p+"\\) has multiplicity 2, an even multiplicity, so the graph touches the x-axis there and turns around. The zero \\("+qq+"\\) has multiplicity 3, an odd multiplicity greater than 1, so the graph flattens out at the intercept and then crosses. A plain crossing with no flattening happens only for multiplicity 1.",
+    {p:p, q:qq});
+});
+
+/* ---------- 3.2 and 3.3: diagnose a synthetic division sign error (L3) ---------- */
+E("u1-error-synthetic",1,["3.2","3.3"],3,"gen",function(){
+  var att=0, cf, a, R, SR, c0;
+  while(att<200){
+    att++;
+    cf=[pick([1,2,3,-2]), ri(-8,8), ri(-8,8), ri(-8,8)];
+    a=pick([-4,-3,-2,-1,1,2,3,4]);
+    R=u1EvalC(cf,a); SR=u1EvalC(cf,-a); c0=cf[3];
+    var vals=[R, SR, -R, c0];
+    var uniq=vals.filter(function(v,i){ return vals.indexOf(v)===i; });
+    if(R!==0 && uniq.length===4) break;
+  }
+  if(!(R!==0 && [R,SR,-R,c0].filter(function(v,i,arr){ return arr.indexOf(v)===i; }).length===4)){ cf=[1,-2,-5,6]; a=2; R=u1EvalC(cf,a); SR=u1EvalC(cf,-a); c0=cf[3]; }
+  return mcq("A student divided \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\) using synthetic division, but placed \\("+(-a)+"\\) at the left of the tableau instead of \\("+a+"\\). The student reported a remainder of \\("+SR+"\\). What is the <b>correct remainder</b>?",
+    ""+R, [""+SR, ""+(-R), ""+c0],
+    "Placing \\("+(-a)+"\\) in the tableau divides by \\((x - ("+(-a)+")) = (x + "+Math.abs(a)+")\\) instead, so the student's remainder is \\(P("+(-a)+") = "+SR+"\\), the remainder for the wrong divisor. The correct remainder is \\(P("+a+")\\), by the remainder theorem:"+
+    u1EvalBlock(cf,a,"P")+
+    "So the correct remainder is <b>"+R+"</b>.",
+    {a:a, R:R, SR:SR});
+});
+
+/* ---------- 3.12: modelling with polynomial functions (L3, var) ---------- */
+E("u1-modelling",1,["3.12"],3,"var",varset([
+  function(){
+    return mcq("An open-top box is made from a rectangular sheet of cardboard that is 36 cm long and 24 cm wide. A square of side \\(x\\) cm is cut from each corner and the sides are folded up. Which expression gives the <b>volume</b>, in cubic centimetres, of the box?",
+      "\\(x(36 - 2x)(24 - 2x)\\)",
+      ["\\(x(36 - x)(24 - x)\\)", "\\((36 - 2x)(24 - 2x)\\)", "\\(x(36 - 2x)(24 + 2x)\\)"],
+      "Cutting a square of side \\(x\\) from each corner shortens every side of the base twice: the base is \\((36 - 2x)\\) cm by \\((24 - 2x)\\) cm, and the height of the folded box is \\(x\\) cm. Volume is height times length times width: \\(x(36 - 2x)(24 - 2x)\\).",
+      {});
+  },
+  function(){
+    return mcq("A farmer uses 48 m of fencing to enclose a rectangular pen on three sides, with an existing barn wall forming the fourth side. The two sides perpendicular to the wall each have length \\(x\\) metres. Which function gives the <b>area</b> of the pen, in square metres?",
+      "\\(A(x) = x(48 - 2x)\\)",
+      ["\\(A(x) = x(48 - x)\\)", "\\(A(x) = 2x(48 - 2x)\\)", "\\(A(x) = x(24 - x)\\)"],
+      "The fencing covers two sides of length \\(x\\) and one side parallel to the wall, so the parallel side has length \\(48 - 2x\\) metres. Area is length times width: \\(A(x) = x(48 - 2x)\\).",
+      {});
+  },
+  function(){
+    var cf=[-2,30,-72,500];
+    var p5=u1EvalC(cf,5), p2=u1EvalC(cf,2);
+    return numq("A bakery chain models its monthly profit, in thousands of dollars, \\(t\\) months after opening a new location, by \\(P(t) = "+u1PolyS(cf)+"\\). How many thousands of dollars <b>greater</b> is the profit in month 5 than in month 2?",
+      p5-p2, 0.001,
+      "Evaluate the model at each time:"+
+      u1EvalBlock(cf,5,"P")+
+      u1EvalBlock(cf,2,"P")+
+      "The difference is \\("+p5+" - "+p2+" = "+(p5-p2)+"\\), so the profit in month 5 is <b>"+(p5-p2)+" thousand dollars</b> greater.",
+      {p5:p5, p2:p2});
+  }
+]));
+
+/* ---------- 3.13: equation of a cubic from its graph (L3) ---------- */
+E("u1-equation-from-graph",1,["3.13"],3,"gen",function(){
+  var att=0, roots, a, cf, y0, flipRoot;
+  while(att<200){
+    att++;
+    roots=shuffle([-4,-3,-2,-1,1,2,3,4]).slice(0,3).sort(function(x,y){ return x-y; });
+    a=pick([2,3,-2,-3]);
+    var cand=roots.filter(function(r){ return roots.indexOf(-r)<0; });
+    if(!cand.length) continue;
+    flipRoot=cand[0];
+    break;
+  }
+  if(att>=200){ roots=[-3,1,2]; a=2; flipRoot=-3; }
+  cf=u1FromRoots(a, roots.map(function(r){ return [r,1]; }));
+  y0=u1EvalC(cf,0);
+  var fn=function(x){ return u1EvalC(cf,x); };
+  var flipped=roots.map(function(r){ return r===flipRoot?-r:r; });
+  var key=u1FactoredS(a, roots.map(function(r){ return [r,1]; }));
+  var q=mcq("The graph of a cubic function is shown. It crosses the x-axis at the marked intercepts and passes through the marked point \\((0, "+y0+")\\). Which <b>equation</b> defines the function?",
+    "\\("+key+"\\)",
+    ["\\("+u1FactoredS(-a, roots.map(function(r){ return [r,1]; }))+"\\)",
+     "\\("+u1FactoredS(a, flipped.map(function(r){ return [r,1]; }))+"\\)",
+     "\\("+u1FactoredS(1, roots.map(function(r){ return [r,1]; }))+"\\)"],
+    "The x-intercepts are "+roots.join(", ")+", so the equation has the form \\(f(x) = a"+roots.map(function(r){ return u1FacS(r); }).join("")+"\\). Use the marked point \\((0, "+y0+")\\) to find \\(a\\):"+
+    "\\[ \\begin{aligned} "+y0+" &= a("+roots.map(function(r){ return -r; }).join(")(")+") \\\\ &= "+((-roots[0])*(-roots[1])*(-roots[2]))+"a \\\\ a &= "+a+" \\end{aligned} \\]"+
+    "So the equation is \\(f(x) = "+key+"\\).",
+    {roots:roots, a:a, y0:y0});
+  q.figure=u1Plot(fn, roots[0]-3, roots[2]+3, {points:[[0,y0],[roots[0],0],[roots[1],0],[roots[2],0]]});
+  return q;
+});
+
+/* ================= Unit 2: Function Transformations ================= */
+/* ================= Unit 2: Function Transformations =================
+   Bank source chunk for the Math 3200 Review app. Helpers are prefixed u2.
+   Sources are type-level only (Mauger Chapter 1 sets, MHR Pre-Calculus 12
+   Chapter 1): every stem, context and value here is original. */
+
+/* ---------- u2 helpers ---------- */
+function u2pm(v){return (v>=0?" + ":" - ")+Math.abs(v);}                 /* " + 3" or " - 3", appended after a term */
+function u2pm0(v){return v===0?"":u2pm(v);}                             /* u2pm, but blank when zero */
+function u2gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){var t=a%b;a=b;b=t;}return a||1;}
+function u2pmFrac(num,den){ /* the signed value num/den as a trailing term: " + 3", " - \\frac{2}{3}", or "" */
+  if(num===0)return "";
+  var g=u2gcd(num,den),a=Math.abs(num)/g,d2=den/g;
+  var body=d2===1?""+a:"\\frac{"+a+"}{"+d2+"}";
+  return (num>0?" + ":" - ")+body;
+}
+function u2xarg(s){if(s===0)return "x";return s>0?"x - "+s:"x + "+(-s);} /* renders "x - s" for the signed value s */
+function u2pt(x,y){return "("+x+", "+y+")";}
+function u2lin(a,b){var s=a===1?"x":a===-1?"-x":a+"x";return s+u2pm0(b);}
+function u2scaleExpr(n,d,v){ /* the factor n/d applied to variable v, as a string */
+  if(n===d)return v;
+  if(d===1)return n+v;
+  if(n===1)return "\\frac{"+v+"}{"+d+"}";
+  return "\\frac{"+n+v+"}{"+d+"}";
+}
+function u2coefStr(n,d){ /* a standalone coefficient n/d as a string */
+  if(d===1)return ""+n;
+  if(n===1)return "\\frac{1}{"+d+"}";
+  return "\\frac{"+n+"}{"+d+"}";
+}
+function u2argStr(n,d){ /* the expression (n/d)x rendered as an argument: "2x" or "\\frac{x}{2}" */
+  if(d===1)return n===1?"x":n+"x";
+  if(n===1)return "\\frac{x}{"+d+"}";
+  return "\\frac{"+n+"x}{"+d+"}";
+}
+function u2shifted(base,sx,sy){ /* base function with argument x - sx, plus sy */
+  var xa=u2xarg(sx),tail=u2pm0(sy);
+  if(base==="sq")return "("+xa+")^2"+tail;
+  if(base==="cu")return "("+xa+")^3"+tail;
+  if(base==="abs")return "|"+xa+"|"+tail;
+  if(base==="sqrt")return "\\sqrt{"+xa+"}"+tail;
+  return "\\frac{1}{"+xa+"}"+tail; /* rec */
+}
+function u2baseDisplay(base){
+  if(base==="sq")return "x^2";
+  if(base==="cu")return "x^3";
+  if(base==="abs")return "|x|";
+  if(base==="sqrt")return "\\sqrt{x}";
+  return "\\frac{1}{x}";
+}
+function u2coefBase(n,d,base){ /* coefficient n/d times a base function, as a string */
+  var b=u2baseDisplay(base);
+  if(n===d)return b;
+  if(d===1)return n+b;
+  if(n===1)return "\\frac{"+b+"}{"+d+"}";
+  return "\\frac{"+n+"}{"+d+"}"+b;
+}
+function u2pointsSVG(pts){ /* scatter plot of labelled points on a -6..6 grid */
+  var W=252,H=252,lo=-6,span=12;
+  function X(v){return (v-lo)/span*W;}
+  function Y(v){return H-(v-lo)/span*H;}
+  var out='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plotted points">';
+  for(var g=-6;g<=6;g+=2){
+    out+='<line x1="'+fmt(X(g),1)+'" y1="0" x2="'+fmt(X(g),1)+'" y2="'+H+'" stroke="#dddddd" stroke-width="1"/>';
+    out+='<line x1="0" y1="'+fmt(Y(g),1)+'" x2="'+W+'" y2="'+fmt(Y(g),1)+'" stroke="#dddddd" stroke-width="1"/>';
+  }
+  out+='<line x1="'+fmt(X(0),1)+'" y1="0" x2="'+fmt(X(0),1)+'" y2="'+H+'" stroke="'+FIG_INK+'" stroke-width="1.6"/>';
+  out+='<line x1="0" y1="'+fmt(Y(0),1)+'" x2="'+W+'" y2="'+fmt(Y(0),1)+'" stroke="'+FIG_INK+'" stroke-width="1.6"/>';
+  out+='<line x1="'+fmt(X(-6),1)+'" y1="'+fmt(Y(0)-6,1)+'" x2="'+fmt(X(-6),1)+'" y2="'+fmt(Y(0)+6,1)+'" stroke="'+FIG_INK+'" stroke-width="1.6"/>';
+  pts.forEach(function(p){
+    out+='<circle cx="'+fmt(X(p[0]),1)+'" cy="'+fmt(Y(p[1]),1)+'" r="4.2" fill="'+FIG_ACC+'"/>';
+    out+=_txt(X(p[0])+16,Y(p[1])-10,"("+p[0]+", "+p[1]+")",12,false);
+  });
+  return out+'</svg>';
+}
+function u2setStr(pts){ /* a set of points as a math string, sorted by x then y */
+  var s=pts.slice().sort(function(a,b){return a[0]-b[0]||a[1]-b[1];});
+  return "\\{ "+s.map(function(p){return u2pt(p[0],p[1]);}).join(", ")+" \\}";
+}
+
+/* ---------- inverses: 4.1 to 4.8 ---------- */
+E("u2-inv-which",2,["4.1"],2,"gen",function(){
+  var form=pick(["lin","sqrt"]),correct,why;
+  if(form==="lin"){
+    var m=pick([1,2,3,4,-2,-3,-4]),b=ri(-6,6);
+    while(b===0)b=ri(-6,6);
+    correct="\\(y = "+u2lin(m,b)+"\\)";
+    why="a non-horizontal straight line passes the horizontal line test, because it increases or decreases steadily across its whole domain";
+  }else{
+    var h=ri(-5,5),k=ri(-5,5);
+    correct="\\(y = \\sqrt{"+u2xarg(h)+"}"+u2pm0(k)+"\\)";
+    why="a square root graph increases steadily across its whole domain, so it passes the horizontal line test";
+  }
+  var pool=[
+    function(){var bb=ri(-6,6),cc=ri(-6,6);while(bb===0)bb=ri(-6,6);return "\\(y = x^2"+u2pm(bb)+"x"+u2pm(cc)+"\\)";},
+    function(){var hh=ri(-5,5),kk=ri(-5,5);return "\\(y = |"+u2xarg(hh)+"|"+u2pm0(kk)+"\\)";},
+    function(){var hh=ri(-5,5),kk=ri(-5,5);return "\\(y = ("+u2xarg(hh)+")^2"+u2pm0(kk)+"\\)";},
+    function(){var cc=pick([2,3,4,5,6,7,8,9]);return "\\(y = x^2 - "+cc+"\\)";},
+    function(){var bb=ri(-6,6);while(bb===0)bb=ri(-6,6);return "\\(y = -x^2"+u2pm(bb)+"x\\)";}
+  ];
+  var idx=shuffle([0,1,2,3,4]).slice(0,3);
+  var dis=idx.map(function(i){return pool[i]();});
+  return mcq("Which function has an inverse that is also a function?",
+    correct,dis,
+    "A function has an inverse that is also a function exactly when it passes the <b>horizontal line test</b>: every horizontal line meets the graph at most once. The correct choice qualifies because "+why+". Each of the other graphs is met twice by some horizontal line, so its inverse would pair one input with two different outputs.",
+    {form:form});
+});
+E("u2-inv-figure",2,["4.2","4.3","4.4"],2,"gen",function(){
+  var pts,opts,tries=0;
+  do{
+    tries++;
+    var xs=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,3);
+    var ys=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,3);
+    pts=[[xs[0],ys[0]],[xs[1],ys[1]],[xs[2],ys[2]]];
+    var swapped=pts.map(function(p){return [p[1],p[0]];});
+    var negX=pts.map(function(p){return [-p[0],p[1]];});
+    var negY=pts.map(function(p){return [p[0],-p[1]];});
+    opts=[u2setStr(swapped),u2setStr(pts),u2setStr(negX),u2setStr(negY)];
+  }while((new Set(opts)).size<4&&tries<60);
+  var q=mcq("The diagram shows the plotted points of a relation. Which set of points lies on the graph of the <b>inverse relation</b>?",
+    opts[0],[opts[1],opts[2],opts[3]],
+    "Reflecting a graph in the line \\(y = x\\) swaps the coordinates of every point, and that reflection is the graph of the inverse relation. Here "+pts.map(function(p){return "\\("+u2pt(p[0],p[1])+"\\) maps to \\("+u2pt(p[1],p[0])+"\\)";}).join(", ")+".",
+    {pts:pts});
+  q.figure=u2pointsSVG(pts);
+  return q;
+});
+E("u2-inv-equation",2,["4.5","4.6"],2,"gen",function(){
+  if(ri(0,1)===0){
+    var m=pick([2,3,4,-2,-3,-4]),b=ri(-9,9);
+    while(b===0)b=ri(-9,9);
+    var correct="\\(f^{-1}(x) = \\frac{x"+u2pm(-b)+"}{"+m+"}\\)";
+    var dis=[
+      "\\(f^{-1}(x) = \\frac{x"+u2pm(b)+"}{"+m+"}\\)",
+      "\\(f^{-1}(x) = \\frac{1}{"+u2lin(m,b)+"}\\)",
+      "\\(f^{-1}(x) = "+u2lin(m,-b)+"\\)"
+    ];
+    return mcq("What is the inverse of the function \\(f(x) = "+u2lin(m,b)+"\\)?",
+      correct,dis,
+      "Swap \\(x\\) and \\(y\\), then solve for \\(y\\): \\[ \\begin{aligned} x &= "+m+"y"+u2pm(b)+" \\\\ x"+u2pm(-b)+" &= "+m+"y \\\\ y &= \\frac{x"+u2pm(-b)+"}{"+m+"} \\end{aligned} \\] So \\(f^{-1}(x) = \\frac{x"+u2pm(-b)+"}{"+m+"}\\). The reciprocal \\(\\frac{1}{f(x)}\\) is a different idea from the inverse function.",
+      {shape:"lin",m:m,b:b});
+  }
+  var h=ri(-5,5),k=ri(-6,6);
+  while(h===0&&k===0){h=ri(-5,5);k=ri(-6,6);}
+  var sq="\\sqrt{"+u2xarg(k)+"}";
+  var correct2="\\(f^{-1}(x) = "+(h===0?sq:h+" + "+sq)+"\\)";
+  var dis2=[
+    "\\(f^{-1}(x) = "+(h===0?"-"+sq:h+" - "+sq)+"\\)",
+    "\\(f^{-1}(x) = \\sqrt{"+u2xarg(h)+"}"+u2pm0(k)+"\\)",
+    "\\(f^{-1}(x) = ("+u2xarg(k)+")^2"+u2pm0(h)+"\\)"
+  ];
+  return mcq("The function \\(f(x) = ("+u2xarg(h)+")^2"+u2pm0(k)+"\\) has domain \\(x \\geq "+h+"\\). What is its inverse?",
+    correct2,dis2,
+    "Swap \\(x\\) and \\(y\\), then solve: \\[ \\begin{aligned} x &= ("+u2xarg(h).replace("x","y")+")^2"+u2pm0(k)+" \\\\ x"+u2pm0(-k)+" &= ("+u2xarg(h).replace("x","y")+")^2 \\\\ \\sqrt{x"+u2pm0(-k)+"} &= "+u2xarg(h).replace("x","y")+" \\\\ y &= "+h+" + \\sqrt{x"+u2pm0(-k)+"} \\end{aligned} \\] The positive root is used because the restricted domain of \\(f\\) keeps the inverse on the branch \\(y \\geq "+h+"\\).",
+    {shape:"quad",h:h,k:k});
+});
+E("u2-inv-domran",2,["4.7"],2,"gen",function(){
+  var a,b,c,d,opts,tries=0;
+  do{
+    tries++;
+    a=ri(-8,3);b=a+ri(2,7);
+    c=ri(-8,3);d=c+ri(2,7);
+    function iv(D1,D2,R1,R2){return "Domain: \\("+D1+" \\leq x \\leq "+D2+"\\); range: \\("+R1+" \\leq y \\leq "+R2+"\\)";}
+    opts=[iv(c,d,a,b),iv(a,b,c,d),iv(-d,-c,-b,-a),iv(c,d,c,d)];
+  }while((new Set(opts)).size<4&&tries<60);
+  return mcq("A relation has domain \\("+a+" \\leq x \\leq "+b+"\\) and range \\("+c+" \\leq y \\leq "+d+"\\). What are the domain and range of its inverse relation?",
+    opts[0],[opts[1],opts[2],opts[3]],
+    "Forming the inverse swaps \\(x\\) and \\(y\\) in every point, so the domain and range trade places: the inverse has domain \\("+c+" \\leq x \\leq "+d+"\\) (the old range) and range \\("+a+" \\leq y \\leq "+b+"\\) (the old domain). The endpoints themselves do not change.",
+    {a:a,b:b,c:c,d:d});
+});
+E("u2-inv-restrict",2,["4.8","4.1"],3,"var",varset([
+  function(){return mcq("The function \\(f(x) = (x - 3)^2 + 2\\) has an inverse that is not a function. Which restriction on the domain of \\(f\\) makes its inverse a function?",
+    "\\(x \\geq 3\\)",
+    ["\\(x \\geq 2\\)","\\(x \\leq 4\\)","No restriction is needed"],
+    "The graph of \\(f\\) is a parabola with vertex \\((3, 2)\\). It fails the horizontal line test because points on the left and right of \\(x = 3\\) share the same \\(y\\)-value. Restricting the domain to one side of the vertex, such as \\(x \\geq 3\\), makes \\(f\\) one-to-one, so its inverse is a function. The restrictions \\(x \\geq 2\\) and \\(x \\leq 4\\) both keep points from both sides of the vertex, so they do not work.",
+    {v:1});},
+  function(){return mcq("The function \\(f(x) = x^2 - 4x + 1\\) has an inverse that is not a function. Which restriction on the domain of \\(f\\) makes its inverse a function?",
+    "\\(x \\leq 2\\)",
+    ["\\(x \\geq -3\\)","\\(x \\leq 3\\)","No restriction is needed"],
+    "Complete the square to locate the vertex: \\[ \\begin{aligned} f(x) &= x^2 - 4x + 1 \\\\ &= (x - 2)^2 - 3 \\end{aligned} \\] The vertex is \\((2, -3)\\), so \\(f\\) is one-to-one on either side of \\(x = 2\\). Restricting the domain to \\(x \\leq 2\\) keeps only the left branch, and the inverse is then a function. The value \\(-3\\) is the minimum value of \\(f\\), not the \\(x\\)-coordinate of the vertex.",
+    {v:2});},
+  function(){return mcq("The function \\(f(x) = |x + 1| - 4\\) has an inverse that is not a function. Which restriction on the domain of \\(f\\) makes its inverse a function?",
+    "\\(x \\geq -1\\)",
+    ["\\(x \\geq -4\\)","\\(x \\leq 0\\)","No restriction is needed"],
+    "The graph of \\(f\\) is a V with its vertex at \\((-1, -4)\\). Inputs on opposite sides of \\(x = -1\\) can give the same output, so the inverse is not a function. Keeping only one side of the V, such as \\(x \\geq -1\\), makes \\(f\\) one-to-one. The restrictions \\(x \\geq -4\\) and \\(x \\leq 0\\) both include inputs from both sides of the vertex.",
+    {v:3});},
+  function(){return mcq("The function \\(f(x) = (x + 2)^2 - 5\\) has an inverse that is not a function. Which restriction on the domain of \\(f\\) makes its inverse a function?",
+    "\\(x \\leq -2\\)",
+    ["\\(x \\geq -5\\)","\\(x \\leq -1\\)","No restriction is needed"],
+    "The graph of \\(f\\) is a parabola with vertex \\((-2, -5)\\). On the domain \\(x \\leq -2\\) the function decreases steadily, so it is one-to-one and its inverse is a function. The restrictions \\(x \\geq -5\\) and \\(x \\leq -1\\) both keep inputs from both sides of the vertex, and \\(-5\\) is the minimum value of \\(f\\), not the vertex \\(x\\)-coordinate.",
+    {v:4});}
+]));
+
+/* ---------- translations: 4.13 to 4.17 ---------- */
+E("u2-trans-describe",2,["4.13","4.14"],1,"gen",function(){
+  var amt=ri(2,12),form=ri(1,3),eq,dir;
+  if(form===1){
+    var k=pick([amt,-amt]);
+    eq="\\(y = f(x)"+u2pm(k)+"\\)";
+    dir=k>0?"up":"down";
+  }else if(form===2){
+    var h=pick([amt,-amt]);
+    eq="\\(y = f("+u2xarg(h)+")\\)";
+    dir=h>0?"right":"left";
+  }else{
+    var k2=pick([amt,-amt]);
+    eq="\\(y"+(k2>0?" - "+k2:" + "+(-k2))+" = f(x)\\)";
+    dir=k2>0?"up":"down";
+  }
+  var correct="The graph is translated "+amt+" units "+dir;
+  var dis=["up","down","left","right"].filter(function(d){return d!==dir;}).map(function(d){return "The graph is translated "+amt+" units "+d;});
+  return mcq("How is the graph of \\(y = f(x)\\) changed to give the graph of "+eq+"?",
+    correct,dis,
+    "In \\(y = f(x) + k\\) and \\(y - k = f(x)\\), a positive \\(k\\) moves the graph up; in \\(y = f(x - h)\\), a positive \\(h\\) moves the graph right, because each input must be \\(h\\) larger to produce the same output. For "+eq+", the change is a translation of "+amt+" units "+dir+".",
+    {form:form,amt:amt,dir:dir});
+});
+E("u2-trans-point",2,["4.15","4.16"],2,"gen",function(){
+  var h=pick([-7,-6,-5,-4,-3,-2,2,3,4,5,6,7]);
+  var k=pick([-7,-6,-5,-4,-3,-2,2,3,4,5,6,7]);
+  var x0=ri(-8,8),y0=ri(-8,8);
+  var eq="\\(y"+(k>0?" - "+k:" + "+(-k))+" = f("+u2xarg(h)+")\\)";
+  var correct="\\("+u2pt(x0+h,y0+k)+"\\)";
+  var dis=[
+    "\\("+u2pt(x0-h,y0+k)+"\\)",
+    "\\("+u2pt(x0+h,y0-k)+"\\)",
+    "\\("+u2pt(x0-h,y0-k)+"\\)"
+  ];
+  return mcq("The point \\("+u2pt(x0,y0)+"\\) lies on the graph of \\(y = f(x)\\). The graph of \\(f\\) is transformed to give the graph of "+eq+". What is the image of the point?",
+    correct,dis,
+    "The equation "+eq+" applies the mapping \\((x, y)\\) to \\((x"+u2pm(h)+", y"+u2pm(k)+")\\). So \\("+u2pt(x0,y0)+"\\) maps to \\("+u2pt(x0+h,y0+k)+"\\) . Watch the horizontal sign: in the form \\(y - k = f(x - h)\\) the graph shifts by \\(+h\\) horizontally, even though the equation shows a subtraction inside \\(f\\).",
+    {h:h,k:k,x0:x0,y0:y0});
+});
+E("u2-trans-equation",2,["4.17","4.15"],2,"gen",function(){
+  var base=pick(["sq","cu","abs","sqrt","rec"]);
+  var sx=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
+  var sy=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
+  var hdesc=Math.abs(sx)+" units "+(sx>0?"right":"left");
+  var vdesc=Math.abs(sy)+" units "+(sy>0?"up":"down");
+  var desc=ri(0,1)===0?hdesc+" and "+vdesc:vdesc+" and "+hdesc;
+  var correct="\\(g(x) = "+u2shifted(base,sx,sy)+"\\)";
+  var dis=[
+    "\\(g(x) = "+u2shifted(base,-sx,sy)+"\\)",
+    "\\(g(x) = "+u2shifted(base,sx,-sy)+"\\)",
+    "\\(g(x) = "+u2shifted(base,-sx,-sy)+"\\)"
+  ];
+  return mcq("The graph of \\(y = "+u2baseDisplay(base)+"\\) is translated "+desc+". What is the equation of the image graph?",
+    correct,dis,
+    "A translation of "+Math.abs(sx)+" units "+(sx>0?"right":"left")+" replaces \\(x\\) by \\("+u2xarg(sx)+"\\), and a translation of "+Math.abs(sy)+" units "+(sy>0?"up":"down")+" adds "+sy+" to the whole function. The image is \\(g(x) = "+u2shifted(base,sx,sy)+"\\) . The horizontal change uses the opposite sign from the direction of travel, which is the most common error in this type of question.",
+    {base:base,sx:sx,sy:sy});
+});
+
+/* ---------- stretches and the full transformation: 4.18 to 4.24 ---------- */
+E("u2-stretch-identify",2,["4.18","4.19"],1,"gen",function(){
+  var base=pick(["sq","cu","abs","sqrt"]);
+  var c=pick([-4,-3,-2,-1,1,2,3,4]);
+  var fac=pick([[2,1],[3,1],[1,2],[1,3]]);
+  var n=fac[0],d=fac[1],dir=ri(0,1);
+  var orig="\\(y = "+u2baseDisplay(base)+u2pm(c)+"\\)",trans,correct,dis;
+  if(dir===0){ /* vertical: y-coords multiplied by n/d, constant term included */
+    trans="\\(y = "+u2coefBase(n,d,base)+u2pmFrac(n*c,d)+"\\)";
+    correct="\\((x, "+u2scaleExpr(n,d,"y")+")\\)";
+    dis=[
+      "\\(("+u2scaleExpr(n,d,"x")+", y)\\)",
+      "\\((x, "+u2scaleExpr(d,n,"y")+")\\)",
+      "\\(("+u2scaleExpr(n,d,"x")+", "+u2scaleExpr(n,d,"y")+")\\)"
+    ];
+  }else{ /* horizontal: x-coords multiplied by n/d, so the equation divides x by n/d */
+    var argB;
+    if(base==="sq")argB="("+u2argStr(d,n)+")^2";
+    else if(base==="cu")argB="("+u2argStr(d,n)+")^3";
+    else if(base==="abs")argB="|"+u2argStr(d,n)+"|";
+    else argB="\\sqrt{"+u2argStr(d,n)+"}";
+    trans="\\(y = "+argB+u2pm(c)+"\\)";
+    correct="\\(("+u2scaleExpr(n,d,"x")+", y)\\)";
+    dis=[
+      "\\((x, "+u2scaleExpr(n,d,"y")+")\\)",
+      "\\(("+u2scaleExpr(d,n,"x")+", y)\\)",
+      "\\(("+u2scaleExpr(n,d,"x")+", "+u2scaleExpr(n,d,"y")+")\\)"
+    ];
+  }
+  return mcq("The graph of "+orig+" is transformed to give the graph of "+trans+". Under this transformation, each point \\((x, y)\\) on the original graph maps to which point?",
+    correct,dis,
+    dir===0
+      ?"A coefficient in front of the function multiplies every \\(y\\)-coordinate (the constant term is part of the function, so it is multiplied too): each point \\((x, y)\\) maps to \\((x, "+u2scaleExpr(n,d,"y")+"))\\). The \\(x\\)-coordinates do not change."
+      :"Changing the input of a function stretches the graph horizontally: to land on the same output, each \\(x\\)-coordinate is multiplied by "+u2coefStr(n,d)+", so each point \\((x, y)\\) maps to \\(("+u2scaleExpr(n,d,"x")+", y)\\) . Notice the equation divides \\(x\\) by that factor, which is why the direction surprises many students.",
+    {base:base,c:c,n:n,d:d,dir:dir});
+});
+E("u2-stretch-point",2,["4.20","4.21"],2,"gen",function(){
+  var A=pick([[2,1],[3,1],[1,2],[1,3]]);
+  var B=pick([[2,1],[3,1],[1,2],[1,3]]);
+  var X=pick([-3,-2,-1,1,2,3]),Y=pick([-3,-2,-1,1,2,3]);
+  var x0=6*X,y0=6*Y;
+  function img(sx,sy){return "\\("+u2pt(sx,sy)+"\\)";}
+  var correct=img(x0*B[1]/B[0],y0*A[0]/A[1]);
+  var dis=[
+    img(x0*B[0]/B[1],y0*A[0]/A[1]),
+    img(x0*B[1]/B[0],y0*A[1]/A[0]),
+    img(x0*B[0]/B[1],y0*A[1]/A[0])
+  ];
+  var eq="\\(y = "+(A[0]===A[1]?"":u2coefStr(A[0],A[1]))+"f("+u2argStr(B[0],B[1])+")\\)";
+  return mcq("The point \\("+u2pt(x0,y0)+"\\) lies on the graph of \\(y = f(x)\\). What is the image of the point on the graph of "+eq+"?",
+    correct,dis,
+    "The mapping for "+eq+" sends \\((x, y)\\) to \\((x \\div "+u2coefStr(B[0],B[1])+", "+u2coefStr(A[0],A[1])+"y)\\): the input factor divides the \\(x\\)-coordinate, and the outside coefficient multiplies the \\(y\\)-coordinate. So \\("+u2pt(x0,y0)+"\\) maps to "+correct+" .",
+    {A:A,B:B,x0:x0,y0:y0});
+});
+E("u2-stretch-equation",2,["4.22"],2,"gen",function(){
+  var base=pick(["sq","cu","sqrt"]);
+  var c=pick([-4,-3,-2,-1,1,2,3,4]);
+  var shape=ri(0,1);
+  var origD=u2baseDisplay(base)+u2pm(c);
+  function argForm(nn,dd){ /* the base with (nn/dd)x as its argument */
+    if(base==="sq")return "("+u2argStr(nn,dd)+")^2";
+    if(base==="cu")return "("+u2argStr(nn,dd)+")^3";
+    return "\\sqrt{"+u2argStr(nn,dd)+"}";
+  }
+  if(shape===0){ /* given a vertical stretch factor */
+    var fac=pick([[2,1],[3,1],[4,1],[1,2],[1,3]]);
+    var n=fac[0],d=fac[1];
+    var correct="\\(g(x) = "+u2coefBase(n,d,base)+u2pmFrac(n*c,d)+"\\)";
+    var dis=[
+      "\\(g(x) = "+argForm(n,d)+u2pm(c)+"\\)",
+      "\\(g(x) = "+u2coefBase(d,n,base)+u2pmFrac(d*c,n)+"\\)",
+      "\\(g(x) = "+origD+u2pmFrac(n,d)+"\\)"
+    ];
+    return mcq("The graph of \\(y = "+origD+"\\) is stretched vertically by a factor of "+u2coefStr(n,d)+". What is the equation of the image graph?",
+      correct,dis,
+      "A vertical stretch by a factor of "+u2coefStr(n,d)+" multiplies the whole function, including its constant term, by that factor, giving \\(g(x) = "+u2coefBase(n,d,base)+u2pmFrac(n*c,d)+"\\) . Putting the factor inside with the \\(x\\) would stretch the graph horizontally instead.",
+      {shape:"v",base:base,c:c,n:n,d:d});
+  }
+  var fac2=pick([[2,1],[3,1],[1,2],[1,3]]);
+  var sn=fac2[0],sd=fac2[1];
+  var correct2="\\(g(x) = "+argForm(sd,sn)+u2pm(c)+"\\)";
+  var dis2=[
+    "\\(g(x) = "+argForm(sn,sd)+u2pm(c)+"\\)",
+    "\\(g(x) = "+u2coefBase(sn,sd,base)+u2pmFrac(sn*c,sd)+"\\)",
+    "\\(g(x) = "+u2coefBase(sd,sn,base)+u2pmFrac(sd*c,sn)+"\\)"
+  ];
+  return mcq("The graph of \\(y = "+origD+"\\) is stretched horizontally by a factor of "+u2coefStr(sn,sd)+". What is the equation of the image graph?",
+    correct2,dis2,
+    "A horizontal stretch by a factor of "+u2coefStr(sn,sd)+" multiplies every \\(x\\)-coordinate by that factor, so the equation must divide \\(x\\) by it, while the constant term stays as it is: \\(g(x) = "+argForm(sd,sn)+u2pm(c)+"\\) . The factor appears with the \\(x\\), not as a coefficient in front of the function.",
+    {shape:"h",base:base,c:c,sn:sn,sd:sd});
+});
+E("u2-full-equation",2,["4.23","4.24"],2,"gen",function(){
+  var pattern=ri(0,3);
+  var refl=pattern!==1;
+  var hasA=pattern!==3, hasB=pattern!==2;
+  var A=pick([[2,1],[3,1],[1,2]]);
+  var S=pick([[2,1],[3,1],[1,2]]);
+  var h=pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var k=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
+  /* the argument is (x - h) divided by the horizontal stretch factor S, so the
+     factor that multiplies (x - h) inside f is 1/S */
+  function build2(reflF,aF,sF,hh,kk,sOverride){
+    var s=sOverride||S;
+    var coef=(reflF?"-":"")+(aF?u2coefStr(A[0],A[1]):"");
+    var arg;
+    if(!sF){
+      arg=u2xarg(hh);
+    }else{
+      var iv0=s[1],iv1=s[0]; /* 1/S = iv0/iv1 */
+      if(iv1===1)arg=iv0===1?u2xarg(hh):iv0+"("+u2xarg(hh)+")";
+      else if(iv0===1)arg="\\frac{"+u2xarg(hh)+"}{"+iv1+"}";
+      else arg="\\frac{"+iv0+"}{"+iv1+"}("+u2xarg(hh)+")";
+    }
+    return "\\(g(x) = "+coef+"f\\left("+arg+"\\right)"+u2pm0(kk)+"\\)";
+  }
+  var correct=build2(refl,hasA,hasB,h,k);
+  var errs=[
+    build2(refl,hasA,hasB,h,-k),
+    build2(refl,hasA,hasB,-h,k),
+    build2(!refl,hasA,hasB,h,k)
+  ];
+  if(hasB)errs.push(build2(refl,hasA,hasB,h,k,[S[1],S[0]]));
+  var dis=shuffle(errs).slice(0,3);
+  var phrases=[];
+  if(refl)phrases.push("reflected in the \\(x\\)-axis");
+  if(hasA)phrases.push("stretched vertically by a factor of "+u2coefStr(A[0],A[1]));
+  if(hasB)phrases.push("stretched horizontally by a factor of "+u2coefStr(S[0],S[1]));
+  phrases.push("translated "+Math.abs(h)+" units "+(h>0?"right":"left")+" and "+Math.abs(k)+" units "+(k>0?"up":"down"));
+  var desc=phrases.join(", ");
+  var solText="Build the equation in the form \\(g(x) = a f(b(x - h)) + k\\). "
+    +(refl
+      ?(hasA
+        ?"The reflection in the \\(x\\)-axis and the vertical stretch give the outside coefficient \\(-"+u2coefStr(A[0],A[1])+"\\). "
+        :"The reflection in the \\(x\\)-axis gives the outside coefficient \\(-1\\). ")
+      :"The vertical stretch gives the outside coefficient \\("+u2coefStr(A[0],A[1])+"\\). ")
+    +(hasB
+      ?"The horizontal stretch by a factor of \\("+u2coefStr(S[0],S[1])+"\\) divides the input of \\(f\\) by that factor. "
+      :"There is no horizontal stretch in this transformation, so the input of \\(f\\) is used as it stands. ")
+    +"The translation replaces \\(x\\) by \\("+u2xarg(h)+"\\) and adds \\("+k+"\\) to the whole function. The result is "+correct+" .";
+  return mcq("The graph of \\(y = f(x)\\) is "+desc+". What is the equation of the image graph?",
+    correct,dis,solText,
+    {pattern:pattern,refl:refl,A:A,S:S,h:h,k:k});
+});
+E("u2-trans-zeros",2,["4.21","4.23"],3,"gen",function(){
+  var B=pick([[2,1],[3,1],[1,2],[1,3]]);
+  var p=B[0],q=B[1];
+  var u1=pick([-3,-2,-1,1,2,3]),u2=pick([-3,-2,-1,1,2,3]);
+  while(u2===u1)u2=pick([-3,-2,-1,1,2,3]);
+  var h=pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var a=pick([2,3,-2]);
+  var z1=p*q*u1,z2=p*q*u2;
+  function pair(t1,t2){
+    var lo=Math.min(t1,t2),hi=Math.max(t1,t2);
+    return "\\(\\{"+lo+", "+hi+"\\}\\)";
+  }
+  var correct=pair(q*q*u1+h,q*q*u2+h);
+  var dis=[
+    pair(p*p*u1+h,p*p*u2+h),
+    pair(q*q*u1-h,q*q*u2-h),
+    pair(p*p*u1-h,p*p*u2-h)
+  ];
+  var bArg=B[0]===1?"\\frac{"+u2xarg(h)+"}{"+B[1]+"}":B[0]+"("+u2xarg(h)+")";
+  var geq="\\(g(x) = "+a+"f\\left("+bArg+"\\right)\\)";
+  var lo=Math.min(z1,z2),hi=Math.max(z1,z2);
+  return mcq("The graph of \\(y = f(x)\\) has \\(x\\)-intercepts "+lo+" and "+hi+". The graph of \\(f\\) is transformed to give "+geq+". What are the \\(x\\)-intercepts of the graph of \\(g\\)?",
+    correct,dis,
+    "Intercepts move only under the horizontal parts of the transformation; the outside coefficient "+a+" does not move them. Each intercept \\(z\\) of \\(f\\) becomes an intercept of \\(g\\) where the input of \\(f\\) again equals \\(z\\): solving gives \\(x = z \\div "+u2coefStr(p,q)+" + "+h+"\\) . Applying this to "+lo+" and "+hi+" gives the intercepts "+correct+" .",
+    {B:B,h:h,a:a,u1:u1,u2:u2});
+});
+
+/* ---------- reflections: 4.40 to 4.47 ---------- */
+E("u2-refl-point",2,["4.40","4.45"],1,"gen",function(){
+  var x=pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+  var y=pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+  while(Math.abs(x)===Math.abs(y))y=pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+  var axis=pick(["x","y","yx"]);
+  var imgX={x:[x,-y],y:[-x,y],yx:[y,x]};
+  var correct="\\("+u2pt(imgX[axis][0],imgX[axis][1])+"\\)";
+  var others={x:[x,-y],y:[-x,y],yx:[y,x]};
+  var dis=Object.keys(others).filter(function(key){return key!==axis;}).map(function(key){return "\\("+u2pt(others[key][0],others[key][1])+"\\)";});
+  dis.push("\\("+u2pt(-x,-y)+"\\)");
+  var axisName=axis==="x"?"the \\(x\\)-axis":axis==="y"?"the \\(y\\)-axis":"the line \\(y = x\\)";
+  var rule=axis==="x"?"a reflection in the \\(x\\)-axis keeps the \\(x\\)-coordinate and negates the \\(y\\)-coordinate"
+    :axis==="y"?"a reflection in the \\(y\\)-axis negates the \\(x\\)-coordinate and keeps the \\(y\\)-coordinate"
+    :"a reflection in the line \\(y = x\\) swaps the two coordinates";
+  return mcq("The point \\(P"+u2pt(x,y)+"\\) is reflected in "+axisName+". What is the image of \\(P\\)?",
+    correct,dis,
+    "Use the coordinate rule: "+rule+". Applying it to \\("+u2pt(x,y)+"\\) gives "+correct+" .",
+    {x:x,y:y,axis:axis});
+});
+E("u2-refl-equation",2,["4.41","4.42","4.43","4.44"],2,"gen",function(){
+  var t=ri(1,3),axis=pick(["x","y"]);
+  var f,negF,fNeg,negFNeg;
+  if(t===1){
+    var c=ri(-9,9);while(c===0)c=ri(-9,9);
+    f="x^3"+u2pm(c);
+    negF="-x^3"+u2pm(-c);
+    fNeg="-x^3"+u2pm(c);
+    negFNeg="x^3"+u2pm(-c);
+  }else if(t===2){
+    var b=pick([-7,-6,-5,-4,-3,-2,2,3,4,5,6,7]);
+    f="x^2"+u2pm(b)+"x";
+    negF="-x^2"+u2pm(-b)+"x";
+    fNeg="x^2"+u2pm(-b)+"x";
+    negFNeg="-x^2"+u2pm(b)+"x";
+  }else{
+    var h=pick([-5,-4,-3,-2,-1,1,2,3,4,5]),k=ri(-6,6);
+    f="|"+u2xarg(h)+"|"+u2pm0(k);
+    negF="-|"+u2xarg(h)+"|"+u2pm0(-k);
+    fNeg="|"+u2xarg(-h)+"|"+u2pm0(k);
+    negFNeg="-|"+u2xarg(-h)+"|"+u2pm0(-k);
+  }
+  var correct="\\(g(x) = "+(axis==="x"?negF:fNeg)+"\\)";
+  var all=[negF,fNeg,negFNeg,f];
+  var dis=all.filter(function(s){return "\\(g(x) = "+s+"\\)"!==correct;}).map(function(s){return "\\(g(x) = "+s+"\\)";});
+  var axisName=axis==="x"?"the \\(x\\)-axis":"the \\(y\\)-axis";
+  return mcq("The graph of \\(f(x) = "+f+"\\) is reflected in "+axisName+". What is the equation of the image graph?",
+    correct,dis,
+    axis==="x"
+      ?"A reflection in the \\(x\\)-axis negates the whole function: \\(g(x) = -f(x)\\). Negating every term of \\(f(x) = "+f+"\\) gives "+correct+" . Replacing \\(x\\) by \\(-x\\) instead would reflect in the \\(y\\)-axis."
+      :"A reflection in the \\(y\\)-axis replaces \\(x\\) by \\(-x\\) throughout: \\(g(x) = f(-x)\\). Applying that to \\(f(x) = "+f+"\\) gives "+correct+" . Negating the whole function instead would reflect in the \\(x\\)-axis.",
+    {t:t,axis:axis});
+});
+E("u2-refl-yx",2,["4.46","4.47"],3,"var",varset([
+  function(){return mcq("The graph of a function \\(f\\) is reflected in the line \\(y = x\\). The image graph does <b>not</b> pass the vertical line test. What must be true of \\(f\\)?",
+    "\\(f\\) is not one-to-one",
+    ["\\(f\\) is not a function","The inverse of \\(f\\) is a function","\\(f\\) does not pass the vertical line test"],
+    "Reflecting in the line \\(y = x\\) produces the inverse relation. The image fails the vertical line test exactly when two points of \\(f\\) share the same \\(y\\)-value, because those points swap into two image points with the same \\(x\\)-coordinate. That means \\(f\\) is not one-to-one, which is also why its inverse is not a function. The function \\(f\\) itself still passes the vertical line test, since it is given to be a function.",
+    {v:1});},
+  function(){return mcq("The graph of a function \\(f\\) is reflected in the line \\(y = x\\). The image graph passes the vertical line test. What must be true?",
+    "The inverse of \\(f\\) is a function",
+    ["\\(f\\) is not one-to-one","\\(f\\) fails the horizontal line test","The image is the graph of the reciprocal of \\(f\\)"],
+    "The reflection in the line \\(y = x\\) is the inverse relation of \\(f\\), and it passes the vertical line test, so the inverse is a function. That happens exactly when \\(f\\) is one-to-one, equivalently when \\(f\\) passes the horizontal line test. A reflection in \\(y = x\\) has nothing to do with the reciprocal \\(\\frac{1}{f(x)}\\).",
+    {v:2});},
+  function(){return mcq("A function \\(f\\) is one-to-one. Its graph is reflected in the line \\(y = x\\). Which statement about the image graph is true?",
+    "The image is the graph of the inverse of \\(f\\)",
+    ["The image is not a function","The image is the reflection of \\(f\\) in the \\(x\\)-axis","The image is the graph of the reciprocal of \\(f\\)"],
+    "Reflecting any graph in the line \\(y = x\\) swaps the coordinates of every point, which produces the inverse relation. Because \\(f\\) is one-to-one, no two of its points share a \\(y\\)-value, so the swapped points never share an \\(x\\)-coordinate: the image passes the vertical line test and is the graph of the inverse function.",
+    {v:3});},
+  function(){return mcq("A relation \\(R\\) contains the points \\((1, 4)\\) and \\((3, 4)\\). The graph of \\(R\\) is reflected in the line \\(y = x\\). Why is the image not a function?",
+    "The image contains \\((4, 1)\\) and \\((4, 3)\\), two points with the same \\(x\\)-coordinate",
+    ["The image contains \\((1, 4)\\) and \\((3, 4)\\), unchanged from \\(R\\)","Every reflection in the line \\(y = x\\) fails the vertical line test","The relation \\(R\\) is not a function"],
+    "Reflection in the line \\(y = x\\) swaps coordinates, so \\((1, 4)\\) maps to \\((4, 1)\\) and \\((3, 4)\\) maps to \\((4, 3)\\). The image pairs the input \\(4\\) with two different outputs, so it fails the vertical line test. Note that \\(R\\) itself is a function: its two points have different \\(x\\)-coordinates.",
+    {v:4});}
+]));
+
+/* ================= Unit 3: Radical Functions ================= */
+/* ================= Unit 3: Radical Functions ================= */
+/* Indicators: 4.9, 4.10, 4.11, 4.12, 4.25, 4.26. Types follow the Mauger
+   Radical Functions set and the MHR Pre-Calculus 12 radical chapter
+   (domain and range of a square-root function, transformations of
+   y = sqrt(x), the square root of a function, graphical solutions of
+   radical equations), rewritten with original stems and values.
+   Algebraic solving of radical equations is Math 2200 content, so the
+   4.26 entries here are graphical, as the guide states. */
+
+function u3sgn(n){return n>0?" + "+n:(n<0?" - "+(-n):"");}
+function u3inside(c){return c>0?"x + "+c:(c<0?"x - "+(-c):"x");}
+function u3coef(a){return a===1?"":(a===-1?"-":""+a);}
+function u3eqnT(a,b,h,k){
+  var inner=(b===1)?u3inside(-h):b+"("+u3inside(-h)+")";
+  return "y = "+u3coef(a)+"\\sqrt{"+inner+"}"+u3sgn(k);
+}
+function u3svgSolve(form,a,c,sol){
+  var xMin=-2,xMax=Math.max(16,sol+5),yMin=-1.5,yMax=c+1.5;
+  var W=320,H=228,L=30,R=10,T=10,B=24;
+  function X(x){return L+(x-xMin)*(W-L-R)/(xMax-xMin);}
+  function Y(y){return (H-B)-(y-yMin)*(H-T-B)/(yMax-yMin);}
+  var out='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graphs of a square root function and a horizontal line meeting at one point">';
+  var gx,gy;
+  for(gx=Math.ceil(xMin);gx<=xMax;gx++){out+='<line x1="'+fmt(X(gx),1)+'" y1="'+fmt(Y(yMin),1)+'" x2="'+fmt(X(gx),1)+'" y2="'+fmt(Y(yMax),1)+'" stroke="#e5e7eb" stroke-width="1"/>';}
+  for(gy=0;gy<=Math.floor(yMax);gy++){out+='<line x1="'+fmt(X(xMin),1)+'" y1="'+fmt(Y(gy),1)+'" x2="'+fmt(X(xMax),1)+'" y2="'+fmt(Y(gy),1)+'" stroke="#e5e7eb" stroke-width="1"/>';}
+  out+='<line x1="'+fmt(X(xMin),1)+'" y1="'+fmt(Y(0),1)+'" x2="'+fmt(X(xMax),1)+'" y2="'+fmt(Y(0),1)+'" stroke="#374151" stroke-width="1.4"/>';
+  out+='<line x1="'+fmt(X(0),1)+'" y1="'+fmt(Y(yMin),1)+'" x2="'+fmt(X(0),1)+'" y2="'+fmt(Y(yMax),1)+'" stroke="#374151" stroke-width="1.4"/>';
+  var startX=(form===1)?-a:a,d="",i,x,y;
+  for(i=0;i<=64;i++){x=startX+(xMax-startX)*i/64;y=Math.sqrt((form===1)?x+a:x-a);if(y>yMax)y=yMax;d+=((i===0)?"M ":"L ")+fmt(X(x),1)+" "+fmt(Y(y),1)+" ";}
+  out+='<path d="'+d+'" fill="none" stroke="#1d4ed8" stroke-width="2"/>';
+  out+='<line x1="'+fmt(X(xMin),1)+'" y1="'+fmt(Y(c),1)+'" x2="'+fmt(X(xMax),1)+'" y2="'+fmt(Y(c),1)+'" stroke="#dc2626" stroke-width="2"/>';
+  out+='<line x1="'+fmt(X(sol),1)+'" y1="'+fmt(Y(0),1)+'" x2="'+fmt(X(sol),1)+'" y2="'+fmt(Y(c),1)+'" stroke="#6b7280" stroke-width="1.2" stroke-dasharray="4 3"/>';
+  out+='<circle cx="'+fmt(X(sol),1)+'" cy="'+fmt(Y(c),1)+'" r="3.6" fill="#dc2626"/>';
+  for(gx=0;gx<=xMax;gx+=5){out+='<text x="'+fmt(X(gx),1)+'" y="'+(H-6)+'" font-size="10" fill="#111827" text-anchor="middle" font-family="sans-serif">'+gx+'</text>';}
+  out+='<text x="'+(L-6)+'" y="'+fmt(Y(c)+3,1)+'" font-size="11" fill="#111827" text-anchor="end" font-family="sans-serif">'+c+'</text>';
+  out+='<text x="'+(W-12)+'" y="'+fmt(Y(0)-5,1)+'" font-size="11" fill="#111827" font-family="sans-serif">x</text>';
+  out+='<text x="'+fmt(X(0)+5,1)+'" y="'+(T+8)+'" font-size="11" fill="#111827" font-family="sans-serif">y</text>';
+  return out+'</svg>';
+}
+
+E("u3-sqrtx-table",3,["4.10"],1,"gen",function(){
+  var shape=ri(1,3);
+  if(shape===3){
+    var m=ri(3,9);
+    return mcq("Which point lies on the graph of \\(y = \\sqrt{x}\\)?",
+      "("+(m*m)+", "+m+")",
+      ["("+m+", "+(m*m)+")","("+(m*m)+", "+(2*m)+")","("+((m+1)*(m+1))+", "+m+")"],
+      "On the graph of \\(y = \\sqrt{x}\\), each y-value is the non-negative square root of its x-value: \\(\\sqrt{"+(m*m)+"} = "+m+"\\). So the point is <b>("+(m*m)+", "+m+")</b>. Swapping the coordinates, doubling the root, or pairing the next square with the same root all break that relationship.",
+      {m:m,shape:shape});
+  }
+  var s=0,R=4,j=1,v=3,tries=0;
+  do{s=ri(0,4);R=pick([4,5]);j=ri(1,R-1);v=s+j;tries++;}while(v<3&&tries<60);
+  var pairs=[],i,x;
+  for(i=0;i<R;i++){
+    if(shape===1)pairs.push("("+(s+i)*(s+i)+", "+((i===j)?"?":(s+i))+")");
+    else pairs.push("("+((i===j)?"?":(s+i)*(s+i))+", "+(s+i)+")");
+  }
+  var table="A table of values for \\(y = \\sqrt{x}\\) gives the points "+pairs.join(", ")+".";
+  if(shape===1){
+    return mcq(table+" What is the missing y-value?",
+      ""+v,[""+(2*v),""+(v*v),""+(v-1)],
+      "In the table, each y-value is the non-negative square root of its x-value. The incomplete pair has \\(x = "+(v*v)+"\\), and \\(\\sqrt{"+(v*v)+"} = "+v+"\\), so the missing y-value is <b>"+v+"</b>.",
+      {v:v,shape:shape});
+  }
+  var w=v*v;
+  return mcq(table+" What is the missing x-value?",
+    ""+w,[""+((v-1)*(v-1)),""+((v+1)*(v+1)),""+(2*v)],
+    "In the table, each x-value is the square of its y-value. The incomplete pair has \\(y = "+v+"\\), and \\("+v+"^2 = "+w+"\\), so the missing x-value is <b>"+w+"</b>.",
+    {v:v,shape:shape});
+});
+
+E("u3-start-point",3,["4.11"],2,"gen",function(){
+  var a=pick([-3,-2,-1,1,2,3]),b=pick([1,2,4]),h=0,k=0,t=0;
+  while((h===0||k===0)&&t<60){h=ri(-6,6);k=ri(-6,6);t++;}
+  var eq=u3eqnT(a,b,h,k);
+  return mcq("The graph of \\("+eq+"\\) is a transformation of the graph of \\(y = \\sqrt{x}\\). At which point does the graph begin?",
+    "("+h+", "+k+")",
+    ["("+(-h)+", "+k+")","("+h+", "+(-k)+")","("+(-h)+", "+(-k)+")"],
+    "The graph of \\(y = \\sqrt{x}\\) begins at \\((0, 0)\\), where the radicand first reaches zero. Here the radicand is zero when \\(x = "+h+"\\), and at that point the value of the function is the vertical shift, \\(y = "+k+"\\). So the graph begins at <b>("+h+", "+k+")</b>. The factors \\(a = "+a+"\\) and \\(b = "+b+"\\) stretch, compress or reflect the graph, but they do not move its starting point.",
+    {a:a,b:b,h:h,k:k});
+});
+
+E("u3-transform-domain-range",3,["4.11"],2,"gen",function(){
+  var a=1,b=1,h=2,k=3,t=0;
+  do{a=pick([-3,-2,-1,1,2,3]);b=pick([1,2,4]);h=ri(-6,6);k=ri(-6,6);t++;}
+  while((h===0||k===0||Math.abs(h)===Math.abs(k))&&t<80);
+  var eq=u3eqnT(a,b,h,k),shape=pick(["domain","range"]);
+  if(shape==="domain"){
+    var inn=u3inside(-h),rad=(b===1)?inn:b+"("+inn+")",steps;
+    if(b===1)steps=rad+" &\\geq 0 \\\\ x &\\geq "+h;
+    else steps=rad+" &\\geq 0 \\\\ "+inn+" &\\geq 0 \\\\ x &\\geq "+h;
+    return mcq("What is the <b>domain</b> of the function \\("+eq+"\\)?",
+      "\\(x \\geq "+h+"\\)",
+      ["\\(x \\geq "+(-h)+"\\)","\\(x \\leq "+h+"\\)","\\(x \\geq "+k+"\\)"],
+      "The radicand of a square root must be non-negative. Because \\(b = "+b+"\\) is positive, dividing by it keeps the direction of the inequality: \\[ \\begin{aligned} "+steps+" \\end{aligned} \\] So the domain is <b>\\(x \\geq "+h+"\\)</b>.",
+      {a:a,b:b,h:h,k:k,shape:shape});
+  }
+  var up=(a>0),cor,dis;
+  if(up){cor="\\(y \\geq "+k+"\\)";dis=["\\(y \\leq "+k+"\\)","\\(y \\geq "+(-k)+"\\)","\\(y \\geq "+h+"\\)"];}
+  else{cor="\\(y \\leq "+k+"\\)";dis=["\\(y \\geq "+k+"\\)","\\(y \\leq "+(-k)+"\\)","\\(y \\leq "+h+"\\)"];}
+  return mcq("What is the <b>range</b> of the function \\("+eq+"\\)?",
+    cor,dis,
+    "A square root is never negative, so \\(\\sqrt{"+((b===1)?u3inside(-h):b+"("+u3inside(-h)+")")+"}\\) takes every value from \\(0\\) upward. Multiplying by \\(a = "+a+"\\) makes the term "+(up?"non-negative":"non-positive")+", and the vertical shift then moves its smallest or largest value to \\("+k+"\\). So the range is <b>"+cor+"</b>.",
+    {a:a,b:b,h:h,k:k,shape:shape});
+});
+
+E("u3-sqrtf-evaluate",3,["4.12"],2,"gen",function(){
+  var c=0,t=0;
+  while(c===0&&t<40){c=ri(-9,9);t++;}
+  var fstr="f(x) = "+u3inside(c),shape=pick([1,2]),m=ri(2,9);
+  if(shape===1){
+    var tv=m*m-c;
+    return numq("Let \\("+fstr+"\\) and \\(g(x) = \\sqrt{f(x)}\\). What is \\(g("+tv+")\\)?",
+      m,0.01,
+      "\\[ \\begin{aligned} g("+tv+") &= \\sqrt{f("+tv+")} \\\\ &= \\sqrt{"+tv+u3sgn(c)+"} \\\\ &= \\sqrt{"+(m*m)+"} \\\\ &= "+m+" \\end{aligned} \\] So \\(g("+tv+") = <b>"+m+"</b>\\).",
+      {c:c,m:m,shape:shape});
+  }
+  var vals=[],tries=0;
+  do{c=ri(-9,9);m=ri(3,9);vals=[m*m-c,m*m+c,m-c,2*(m-c)];tries++;}
+  while((c===0||new Set(vals).size<4)&&tries<80);
+  fstr="f(x) = "+u3inside(c);
+  var xv=m*m-c;
+  return mcq("Let \\("+fstr+"\\) and \\(g(x) = \\sqrt{f(x)}\\). For what value of \\(x\\) is \\(g(x) = "+m+"\\)?",
+    ""+xv,vals.slice(1).map(function(z){return ""+z;}),
+    "Set the output of \\(g\\) equal to \\("+m+"\\) and square both sides: \\[ \\begin{aligned} \\sqrt{"+u3inside(c)+"} &= "+m+" \\\\ "+u3inside(c)+" &= "+(m*m)+" \\\\ x &= "+xv+" \\end{aligned} \\] So \\(g(x) = "+m+"\\) when <b>\\(x = "+xv+"\\)</b>.",
+    {c:c,m:m,shape:shape});
+});
+
+E("u3-compare-domains",3,["4.9"],2,"gen",function(){
+  var r=pick([2,3,4,5,6,7]),n=r*r,shifted=pick([false,true]),h=shifted?pick([-3,-2,-1,1,2,3]):0;
+  var base=shifted?"("+u3inside(-h)+")^2":"x^2",fstr=base+" - "+n;
+  var lo=h-r,hi=h+r,shape=pick(["domain","range"]);
+  if(shape==="domain"){
+    return mcq("Let \\(f(x) = "+fstr+"\\) and \\(g(x) = \\sqrt{f(x)}\\). Which statement correctly compares the <b>domains</b> of the two functions?",
+      "The domain of f is all real numbers, but the domain of g is \\(x \\leq "+lo+"\\) or \\(x \\geq "+hi+"\\)",
+      ["The domain of f is all real numbers, but the domain of g is \\(x \\geq "+hi+"\\)",
+       "The domain of g is all real numbers, but the domain of f is \\(x \\leq "+lo+"\\) or \\(x \\geq "+hi+"\\)",
+       "The domains are the same, because taking a square root does not restrict where a function is defined"],
+      "A polynomial such as \\(f\\) is defined for every real value of \\(x\\). For \\(g\\), the radicand must be non-negative: \\("+fstr+" \\geq 0\\) holds exactly where the parabola is on or above the x-axis, which is \\(x \\leq "+lo+"\\) or \\(x \\geq "+hi+"\\). So building \\(g\\) from the square root of \\(f\\) restricts the domain to where \\(f(x) \\geq 0\\).",
+      {r:r,h:h,shape:shape});
+  }
+  return mcq("Let \\(f(x) = "+fstr+"\\) and \\(g(x) = \\sqrt{f(x)}\\). Which statement correctly compares the <b>ranges</b> of the two functions?",
+    "The range of f is \\(y \\geq "+(-n)+"\\), but the range of g is \\(y \\geq 0\\)",
+    ["The range of f is \\(y \\geq 0\\), but the range of g is \\(y \\geq "+(-n)+"\\)",
+     "The range of f is \\(y \\geq "+(-n)+"\\), and the range of g is \\(y \\geq "+(-n)+"\\) as well",
+     "The range of f is \\(y \\geq "+n+"\\), but the range of g is \\(y \\geq 0\\)"],
+    "The parabola \\(f\\) opens upward with minimum value \\(-"+n+"\\) at its vertex, so the range of \\(f\\) is \\(y \\geq "+(-n)+"\\). A square root never gives a negative output, and as \\(f(x)\\) grows, \\(\\sqrt{f(x)}\\) takes every value from \\(0\\) upward, so the range of \\(g\\) is \\(y \\geq 0\\). The square root discards the negative part of the range of \\(f\\).",
+    {r:r,h:h,shape:shape});
+});
+
+E("u3-intercept-solution",3,["4.25"],2,"gen",function(){
+  var form=pick([1,2]),b=ri(2,6),a,sol,inn;
+  if(form===1){a=ri(1,b*b-1);sol=b*b-a;inn=a;}
+  else{a=ri(1,9);sol=b*b+a;inn=-a;}
+  var rad="\\sqrt{"+u3inside(inn)+"}";
+  return numq("The graph of \\(y = "+rad+" - "+b+"\\) has exactly one x-intercept. What is the solution of the equation \\("+rad+" = "+b+"\\)?",
+    sol,0.01,
+    "At an x-intercept, \\(y = 0\\), so the intercept is the value of \\(x\\) that makes \\("+rad+" - "+b+" = 0\\): \\[ \\begin{aligned} "+rad+" &= "+b+" \\\\ "+u3inside(inn)+" &= "+(b*b)+" \\\\ x &= "+sol+" \\end{aligned} \\] The solution is <b>\\(x = "+sol+"\\)</b>. In general, the roots of a radical equation are exactly the x-intercepts of the corresponding radical function.",
+    {a:a,b:b,form:form});
+});
+
+E("u3-graphical-solve",3,["4.26"],2,"gen",function(){
+  var form=pick([1,2]),c=pick([2,3,4,5]),a=0,sol=0,t=0;
+  if(form===1){do{a=ri(0,12);t++;}while(a>=c*c&&t<60);sol=c*c-a;}
+  else{a=ri(1,10);sol=c*c+a;}
+  var rad="\\sqrt{"+u3inside((form===1)?a:-a)+"}";
+  var chk=(form===1)?((a===0)?""+sol:sol+" + "+a):sol+" - "+a;
+  var q=numq("The graphs of \\(y = "+rad+"\\) and \\(y = "+c+"\\) are shown in the diagram. Use the graph to solve the equation \\("+rad+" = "+c+"\\).",
+    sol,0.01,
+    "On the graph, the solution is the x-coordinate of the point where the curve meets the line \\(y = "+c+"\\). The dashed line drops from that intersection point to the x-axis at <b>\\(x = "+sol+"\\)</b>. Check: \\(\\sqrt{"+chk+"} = \\sqrt{"+(c*c)+"} = "+c+"\\).",
+    {a:a,c:c,form:form});
+  q.figure=u3svgSolve(form,a,c,sol);
+  return q;
+});
+
+E("u3-two-methods",3,["4.26"],3,"gen",function(){
+  var a=ri(2,12),c=pick([2,3,4,5,6]),t=0;
+  while(c*c<=a&&t<60){c=pick([2,3,4,5,6]);t++;}
+  var s=c*c-a,pair=pick([["Ava","Liam"],["Noah","Emma"],["Lucas","Mia"],["Ella","Owen"]]);
+  var rad="\\sqrt{"+u3inside(a)+"}";
+  return mcq(pair[0]+" and "+pair[1]+" each solve \\("+rad+" = "+c+"\\) graphically. "+pair[0]+" graphs \\(y = "+rad+"\\) and \\(y = "+c+"\\) and reads the x-coordinate of their intersection point. "+pair[1]+" graphs \\(y = "+rad+" - "+c+"\\) and reads its x-intercept. Which statement is correct?",
+    "Both methods give \\(x = "+s+"\\), because the intersection x-coordinate and the x-intercept both occur where \\("+rad+" = "+c+"\\)",
+    ["Only "+pair[0]+"'s method works, because the solution of an equation is the x-coordinate where two graphs intersect",
+     "Only "+pair[1]+"'s method works, because the solution of an equation has to be read from the x-intercept of a single graph",
+     "Neither method works, because a solution read from a graph is only an estimate and cannot be checked"],
+    pair[1]+"'s graph crosses the x-axis where \\("+rad+" - "+c+" = 0\\), which is the very same condition as \\("+rad+" = "+c+"\\). That x-value is also where "+pair[0]+"'s two graphs meet, since both graphs then have the same y-value. So both methods find \\(x = "+(c*c)+" - "+a+" = "+s+"\\), and substituting back confirms it exactly.",
+    {a:a,c:c});
+});
+
+E("u3-recover-f-value",3,["4.12"],3,"gen",function(){
+  var p=ri(-6,2),q=ri(p+2,8),side=pick([0,1]),off=ri(1,6),m=pick([3,4,5,6,7,8]);
+  var tv=(side===0)?p-off:q+off;
+  return mcq("For a certain function \\(f\\), the graph of \\(g(x) = \\sqrt{f(x)}\\) is defined for \\(x \\leq "+p+"\\) or \\(x \\geq "+q+"\\), and \\(g("+tv+") = "+m+"\\). What is the value of \\(f("+tv+")\\)?",
+    ""+(m*m),
+    [""+m,""+(2*m),""+(m*m+m)],
+    "Because \\(g(x) = \\sqrt{f(x)}\\), the statement \\(g("+tv+") = "+m+"\\) means \\(\\sqrt{f("+tv+")} = "+m+"\\). Squaring both sides undoes the square root: \\[ \\begin{aligned} \\sqrt{f("+tv+")} &= "+m+" \\\\ f("+tv+") &= "+m+"^2 \\\\ &= "+(m*m)+" \\end{aligned} \\] So \\(f("+tv+") = <b>"+(m*m)+"</b>\\). The domain information confirms that \\(g\\) is defined at \\(x = "+tv+"\\); the value itself comes from squaring.",
+    {p:p,q:q,tv:tv,m:m});
+});
+
+E("u3-intercept-statement",3,["4.25"],2,"gen",function(){
+  var form=pick([1,2]),b=ri(2,6),a,tv,inn;
+  if(form===1){a=ri(1,b*b-1);tv=b*b-a;inn=a;}
+  else{a=ri(1,9);tv=b*b+a;inn=-a;}
+  var rad="\\sqrt{"+u3inside(inn)+"}",radOpp="\\sqrt{"+u3inside(-inn)+"}";
+  return mcq("The graph of \\(y = "+rad+" - "+b+"\\) has x-intercept \\(x = "+tv+"\\). Which statement must be true?",
+    "\\("+rad+" = "+b+"\\)",
+    ["\\("+rad+" = 0\\)","\\("+rad+" = "+(-b)+"\\)","\\("+radOpp+" = "+b+"\\)"],
+    "At an x-intercept, the y-value is \\(0\\): \\[ \\begin{aligned} 0 &= "+rad+" - "+b+" \\\\ "+rad+" &= "+b+" \\end{aligned} \\] So the intercept \\(x = "+tv+"\\) is a root of the equation \\("+rad+" = "+b+"\\). This is the general relationship: the roots of a radical equation are the x-intercepts of the corresponding radical function.",
+    {a:a,b:b,form:form});
+});
+
+/* ================= Unit 4: Trigonometry and the Unit Circle ================= */
+/* ================= Unit 4: Trigonometry and the Unit Circle =================
+   Helpers are prefixed u4; the only other top-level statements are E(...) calls.
+   18 entries: L1 4, L2 11, L3 3. Codes: MA3200.7.1 to 7.19, 7.34 to 7.37. */
+
+function u4gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+
+function u4fr(n, d) { /* signed reduced fraction as a KaTeX body (no delimiters) */
+  if (d < 0) { n = -n; d = -d; }
+  if (n === 0) return "0";
+  var g = u4gcd(n, d); n /= g; d /= g;
+  var s = n < 0 ? "-" : ""; n = Math.abs(n);
+  if (d === 1) return s + n;
+  return s + "\\frac{" + n + "}{" + d + "}";
+}
+
+function u4mag(kind, av) { /* exact magnitude string for a special-angle ratio value */
+  var table;
+  if (kind === "sin" || kind === "cos") table = [[0, "0"], [0.5, "\\frac{1}{2}"], [0.7071, "\\frac{\\sqrt{2}}{2}"], [0.866, "\\frac{\\sqrt{3}}{2}"], [1, "1"]];
+  else if (kind === "tan" || kind === "cot") table = [[0, "0"], [0.5774, "\\frac{\\sqrt{3}}{3}"], [1, "1"], [1.7321, "\\sqrt{3}"]];
+  else table = [[1, "1"], [1.1547, "\\frac{2\\sqrt{3}}{3}"], [1.4142, "\\sqrt{2}"], [2, "2"]];
+  for (var i = 0; i < table.length; i++) if (Math.abs(av - table[i][0]) < 0.01) return table[i][1];
+  return null;
+}
+
+function u4ratioVal(kind, deg) { /* numeric value of a ratio at a degree measure */
+  var th = deg * Math.PI / 180, sv = Math.sin(th), cv = Math.cos(th);
+  if (kind === "sin") return sv;
+  if (kind === "cos") return cv;
+  if (kind === "tan") return sv / cv;
+  if (kind === "csc") return 1 / sv;
+  if (kind === "sec") return 1 / cv;
+  return cv / sv;
+}
+
+function u4exact(kind, deg) { /* {s, v}: exact string and value of a ratio at a special degree, or null if undefined */
+  var th = deg * Math.PI / 180, sv = Math.sin(th), cv = Math.cos(th), v;
+  if (kind === "sin") v = sv;
+  else if (kind === "cos") v = cv;
+  else if (kind === "tan") { if (Math.abs(cv) < 1e-9) return null; v = sv / cv; }
+  else if (kind === "csc") { if (Math.abs(sv) < 1e-9) return null; v = 1 / sv; }
+  else if (kind === "sec") { if (Math.abs(cv) < 1e-9) return null; v = 1 / cv; }
+  else { if (Math.abs(sv) < 1e-9) return null; v = cv / sv; }
+  var fam = (kind === "csc" || kind === "sec") ? "sec" : kind;
+  var mag = u4mag(fam, Math.abs(v));
+  if (mag === null) return null;
+  return { s: (v < 0 && mag !== "0" ? "-" : "") + mag, v: v };
+}
+
+var u4DEGS = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+var u4KINDS = ["sin", "cos", "tan", "csc", "sec", "cot"];
+
+function u4radS(deg) { /* radian string body for a special degree, principal value in [0, 360) */
+  deg = ((deg % 360) + 360) % 360;
+  if (deg === 0) return "0";
+  var g = u4gcd(deg, 180), n = deg / g, d = 180 / g;
+  if (d === 1) return n === 1 ? "\\pi" : n + "\\pi";
+  if (n === 1) return "\\frac{\\pi}{" + d + "}";
+  return "\\frac{" + n + "\\pi}{" + d + "}";
+}
+function u4radSgn(deg) { return deg < 0 ? "-" + u4radS(-deg) : u4radS(deg); }
+function u4radBig(deg) { /* radian string body for any integer degree total, no reduction mod 360 */
+  if (deg === 0) return "0";
+  var s = deg < 0 ? "-" : "", a = Math.abs(deg), g = u4gcd(a, 180), n = a / g, d = 180 / g;
+  if (d === 1) return s + (n === 1 ? "\\pi" : n + "\\pi");
+  if (n === 1) return s + "\\frac{\\pi}{" + d + "}";
+  return s + "\\frac{" + n + "\\pi}{" + d + "}";
+}
+function u4dist3(correct, cands) { /* first three candidate strings that differ from the key and each other */
+  var out = [];
+  for (var i = 0; i < cands.length; i++) {
+    var c = cands[i];
+    if (c !== null && c !== undefined && c !== correct && out.indexOf(c) < 0) out.push(c);
+    if (out.length === 3) break;
+  }
+  return out;
+}
+function u4quadOf(deg) { var p = ((deg % 360) + 360) % 360; return p < 90 ? 1 : p < 180 ? 2 : p < 270 ? 3 : 4; }
+function u4refOf(deg) { var p = ((deg % 360) + 360) % 360; return p <= 90 ? p : p <= 180 ? 180 - p : p <= 270 ? p - 180 : 360 - p; }
+function u4wrap(x) { var t = 2 * Math.PI; return ((x % t) + t) % t; }
+
+function u4armSVG(deg) { /* unit circle, axes, rotation arc and terminal arm for a standard-position angle */
+  var th = deg * Math.PI / 180, cx = 88, cy = 88, R = 64;
+  var ex = cx + R * Math.cos(th), ey = cy - R * Math.sin(th);
+  var large = Math.abs(deg) > 180 ? 1 : 0, sweep = deg >= 0 ? 0 : 1;
+  var ax = cx + 38 * Math.cos(th), ay = cy - 38 * Math.sin(th);
+  var out = '<svg viewBox="0 0 176 176" width="176" height="176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Unit circle with an angle in standard position">';
+  out += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="' + FIG_INK + '" stroke-width="1.3"/>';
+  out += '<line x1="' + (cx - R - 12) + '" y1="' + cy + '" x2="' + (cx + R + 12) + '" y2="' + cy + '" stroke="' + FIG_INK + '" stroke-width="1"/>';
+  out += '<line x1="' + cx + '" y1="' + (cy - R - 12) + '" x2="' + cx + '" y2="' + (cy + R + 12) + '" stroke="' + FIG_INK + '" stroke-width="1"/>';
+  out += '<path d="M ' + (cx + 38) + ' ' + cy + ' A 38 38 0 ' + large + ' ' + sweep + ' ' + fmt(ax, 1) + ' ' + fmt(ay, 1) + '" fill="none" stroke="' + FIG_ACC + '" stroke-width="2"/>';
+  out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + fmt(ex, 1) + '" y2="' + fmt(ey, 1) + '" stroke="' + FIG_INK + '" stroke-width="2.2"/>';
+  out += '<circle cx="' + fmt(ex, 1) + '" cy="' + fmt(ey, 1) + '" r="3.2" fill="' + FIG_ALT + '"/>';
+  return out + '</svg>';
+}
+
+function u4ptSVG(x, y) { /* axes with the terminal arm to the point P(x, y) and dashed coordinate drops */
+  var r = Math.sqrt(x * x + y * y), cx = 88, cy = 88, R = 64;
+  var px = cx + R * x / r, py = cy - R * y / r;
+  var out = '<svg viewBox="0 0 176 176" width="176" height="176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Point on a terminal arm">';
+  out += '<line x1="8" y1="' + cy + '" x2="168" y2="' + cy + '" stroke="' + FIG_INK + '" stroke-width="1"/>';
+  out += '<line x1="' + cx + '" y1="8" x2="' + cx + '" y2="168" stroke="' + FIG_INK + '" stroke-width="1"/>';
+  out += '<line x1="' + fmt(px, 1) + '" y1="' + fmt(py, 1) + '" x2="' + fmt(px, 1) + '" y2="' + cy + '" stroke="' + FIG_INK + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
+  out += '<line x1="' + fmt(px, 1) + '" y1="' + fmt(py, 1) + '" x2="' + cx + '" y2="' + fmt(py, 1) + '" stroke="' + FIG_INK + '" stroke-width="0.8" stroke-dasharray="3 3"/>';
+  out += '<line x1="' + cx + '" y1="' + cy + '" x2="' + fmt(px, 1) + '" y2="' + fmt(py, 1) + '" stroke="' + FIG_INK + '" stroke-width="2.2"/>';
+  out += '<circle cx="' + fmt(px, 1) + '" cy="' + fmt(py, 1) + '" r="3.2" fill="' + FIG_ALT + '"/>';
+  out += _txt(px + (x >= 0 ? 8 : -8), py - 10, "P(" + x + ", " + y + ")", 12, true, x >= 0 ? "start" : "end");
+  return out + '</svg>';
+}
+
+function u4triSVG(o) { /* right triangle: vertical side on the right, angle at bottom left, or at the top when o.dep */
+  var out = '<svg viewBox="0 0 196 172" width="196" height="172" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Right triangle diagram">';
+  out += '<polygon points="28,146 158,146 158,44" fill="none" stroke="' + FIG_INK + '" stroke-width="2"/>';
+  out += '<path d="M 146 146 L 146 134 L 158 134" fill="none" stroke="' + FIG_INK + '" stroke-width="1.2"/>';
+  if (o.vlab) out += _txt(166, 95, o.vlab, 12.5, true, "start");
+  if (o.hlab) out += _txt(93, 162, o.hlab, 12.5, true);
+  if (o.hypLab) out += _txt(78, 84, o.hypLab, 12.5, true);
+  if (o.dep) {
+    out += '<line x1="158" y1="44" x2="92" y2="44" stroke="' + FIG_INK + '" stroke-width="1" stroke-dasharray="4 3"/>';
+    out += '<path d="M 136 44 A 22 22 0 0 0 140.7 57.6" fill="none" stroke="' + FIG_ACC + '" stroke-width="1.8"/>';
+    if (o.angLab) out += _txt(122, 32, o.angLab, 12, true);
+  } else {
+    out += '<path d="M 50 146 A 22 22 0 0 0 45.3 132.4" fill="none" stroke="' + FIG_ACC + '" stroke-width="1.8"/>';
+    if (o.angLab) out += _txt(64, 134, o.angLab, 12, true);
+  }
+  return out + '</svg>';
+}
+
+function u4pairStr(pr, rad) { /* display a pair of special degrees as an option string, ascending */
+  var a = Math.min(pr[0], pr[1]), b = Math.max(pr[0], pr[1]);
+  if (rad) return "\\(" + u4radS(a) + "\\) and \\(" + u4radS(b) + "\\)";
+  return a + "° and " + b + "°";
+}
+
+function u4twoStr(kind, v) { /* exact string for twice a special ratio value */
+  var av = Math.abs(2 * v), t;
+  if (kind === "tan" || kind === "cot") t = [[0, "0"], [1.1547, "\\frac{2\\sqrt{3}}{3}"], [2, "2"], [3.4641, "2\\sqrt{3}"]];
+  else t = [[0, "0"], [1, "1"], [1.4142, "\\sqrt{2}"], [1.7321, "\\sqrt{3}"]];
+  for (var i = 0; i < t.length; i++) if (Math.abs(av - t[i][0]) < 0.01) return (v < 0 && t[i][1] !== "0" ? "-" : "") + t[i][1];
+  return null;
+}
+
+/* ---- 7.1, 7.4: read a standard-position sketch (degrees, then radians as k pi) ---- */
+E("u4-sketch-standard-position", 4, ["7.1", "7.4"], 1, "gen", function () {
+  var fig, q;
+  if (Math.random() < 0.5) {
+    var pool = [20, 30, 40, 50, 60, 70, 80, 100, 110, 120, 130, 140, 150, 160, 170, 190, 200, 210, 220, 230, 240, 250, 260, 280, 290, 300, 310, 320, 330, 340, 350];
+    var deg = pick(pool) * pick([1, -1]);
+    fig = u4armSVG(deg);
+    var dis = ["" + (-deg) + "°", "" + (deg - (deg > 0 ? 360 : -360)) + "°", "" + ((deg > 0 ? 1 : -1) * (180 - Math.abs(deg))) + "°"];
+    q = mcq("The diagram shows an angle in standard position. What is the measure of the angle?",
+      "" + deg + "°", dis,
+      "The initial arm lies on the positive x-axis and the rotation is " + (deg > 0 ? "counterclockwise" : "clockwise") + ". The terminal arm is in Quadrant " + ["I", "II", "III", "IV"][u4quadOf(deg) - 1] + " with reference angle " + u4refOf(deg) + "°, which gives the signed measure <b>" + deg + "°</b>.",
+      { mode: "deg", deg: deg });
+  } else {
+    var d = pick([30, 45, 60, 120, 135, 150, 210, 225, 240, 300, 315, 330]) * pick([1, -1]);
+    fig = u4armSVG(d);
+    q = mcq("The diagram shows an angle in standard position. What is the measure of the angle, in radians?",
+      "\\(" + u4radSgn(d) + "\\)",
+      ["\\(" + u4radSgn(-d) + "\\)", "\\(" + u4radSgn(d - (d > 0 ? 360 : -360)) + "\\)", "\\(" + u4radSgn((d > 0 ? 1 : -1) * (180 - Math.abs(d))) + "\\)"],
+      "The terminal arm is the one for " + d + "°, and " + d + "° expressed in radians is \\(" + u4radSgn(d) + "\\). The signed measure is <b>\\(" + u4radSgn(d) + "\\)</b>.",
+      { mode: "rad", deg: d });
+  }
+  q.figure = fig;
+  return q;
+});
+
+/* ---- 7.2, 7.3: one radian and the degree-radian relationship ---- */
+E("u4-one-radian", 4, ["7.2", "7.3"], 1, "var", varset([
+  function () {
+    return mcq("An angle measures exactly 1 radian. To the nearest tenth of a degree, its measure is",
+      "57.3°", ["60.0°", "45.0°", "90.0°"],
+      "A full rotation is \\(360^\\circ = 2\\pi\\) rad, so \\(1\\) rad \\(= \\frac{180}{\\pi} \\approx 57.3^\\circ\\). The measure is <b>57.3°</b>.",
+      { v: 1 });
+  },
+  function () {
+    return mcq("Which statement correctly describes an angle of 1 radian?",
+      "It cuts an arc equal in length to the radius",
+      ["It is exactly one quarter of a full rotation", "It measures exactly 60 degrees", "It cuts an arc twice the length of the radius"],
+      "By definition, an angle of 1 radian is the central angle that cuts an arc whose length equals the radius of the circle. A quarter rotation is \\(\\frac{\\pi}{2}\\) rad, and an arc of twice the radius belongs to 2 radians.",
+      { v: 2 });
+  },
+  function () {
+    return mcq("\\(\\pi\\) radians is equal to",
+      "180°", ["360°", "90°", "57.3°"],
+      "Half a rotation is \\(\\pi\\) rad and also \\(180^\\circ\\), so \\(\\pi\\) rad \\(= 180^\\circ\\). The value 57.3° is the size of 1 radian, not of \\(\\pi\\) radians.",
+      { v: 3 });
+  },
+  function () {
+    return mcq("A full rotation measures \\(2\\pi\\) radians. One radian is what fraction of a full rotation?",
+      "\\(\\frac{1}{2\\pi}\\)", ["\\(\\frac{1}{\\pi}\\)", "\\(\\frac{\\pi}{2}\\)", "\\(\\frac{1}{2}\\)"],
+      "One radian out of a full rotation of \\(2\\pi\\) radians is the fraction \\(\\frac{1}{2\\pi}\\).",
+      { v: 4 });
+  }
+]));
+
+/* ---- 7.5: degrees to radians (exact for special angles, decimal otherwise) ---- */
+E("u4-deg-to-rad", 4, ["7.5"], 1, "gen", function () {
+  if (Math.random() < 0.55) {
+    var d = pick([15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]);
+    var corr = "\\(" + u4radS(d) + "\\)";
+    var cands = [(d + 45) % 360, (d + 90) % 360, (d + 135) % 360, (d + 180) % 360, (360 - d) % 360, (d + 270) % 360].map(function (x) { return "\\(" + u4radS(x) + "\\)"; });
+    return mcq("Convert " + d + "° to radians, in exact form.",
+      corr, u4dist3(corr, cands),
+      "Multiply by \\(\\frac{\\pi}{180}\\): \\[ \\begin{aligned} " + d + "^\\circ &= " + d + " \\times \\frac{\\pi}{180} \\\\ &= " + u4radS(d) + " \\end{aligned} \\] The exact measure is <b>\\(" + u4radS(d) + "\\)</b>.",
+      { mode: "exact", d: d });
+  }
+  var dd = ri(10, 350);
+  while (dd % 15 === 0) dd = ri(10, 350);
+  var ans = Math.round(dd * Math.PI / 180 * 100) / 100;
+  return numq("Convert " + dd + "° to radians, to the nearest hundredth.",
+    ans, 0.006,
+    "Multiply by \\(\\frac{\\pi}{180}\\): \\[ \\begin{aligned} " + dd + "^\\circ &= " + dd + " \\times \\frac{\\pi}{180} \\\\ &\\approx " + fmt(dd * Math.PI / 180) + " \\end{aligned} \\] To the nearest hundredth, the measure is <b>" + fmt(ans) + " rad</b>.",
+    { mode: "dec", d: dd });
+});
+
+/* ---- 7.6: radians to degrees (exact for special angles, decimal otherwise) ---- */
+E("u4-rad-to-deg", 4, ["7.6"], 1, "gen", function () {
+  if (Math.random() < 0.55) {
+    var d = pick([15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345]);
+    var corr = d + "°";
+    var cands = [(d + 45) % 360, (d + 90) % 360, (d + 135) % 360, (d + 180) % 360, (360 - d) % 360, (d + 270) % 360].map(function (x) { return x + "°"; });
+    return mcq("Convert \\(" + u4radS(d) + "\\) radians to degrees.",
+      corr, u4dist3(corr, cands),
+      "Multiply by \\(\\frac{180}{\\pi}\\): \\[ \\begin{aligned} " + u4radS(d) + " \\text{ rad} &= " + u4radS(d) + " \\times \\frac{180}{\\pi} \\\\ &= " + d + "^\\circ \\end{aligned} \\] The measure is <b>" + d + "°</b>.",
+      { mode: "exact", d: d });
+  }
+  var r = ri(21, 620) / 100;
+  var ansD = Math.round(r * 180 / Math.PI);
+  return numq("Convert " + fmt(r) + " radians to degrees, to the nearest degree.",
+    ansD, 0.5,
+    "Multiply by \\(\\frac{180}{\\pi}\\): \\[ \\begin{aligned} " + fmt(r) + " \\text{ rad} &= " + fmt(r) + " \\times \\frac{180}{\\pi} \\\\ &\\approx " + fmt(r * 180 / Math.PI, 1) + "^\\circ \\end{aligned} \\] To the nearest degree, the measure is <b>" + ansD + "°</b>.",
+    { mode: "dec", r: r });
+});
+
+/* ---- 7.7, 7.8: coterminal angles and their general form ---- */
+E("u4-coterminal", 4, ["7.7", "7.8"], 2, "gen", function () {
+  var mode = pick(["find", "find", "form"]);
+  if (mode === "find") {
+    if (Math.random() < 0.5) {
+      var b = ri(1, 35) * 10, k = pick([1, 1, 2, -1, -2]);
+      var th = b + 360 * k;
+      var corr = b + "°";
+      var cands = [(b + 180) % 360, (360 - b) % 360, (b + 90) % 360, (b + 270) % 360, (180 - b + 360) % 360, (b + 45) % 360].map(function (x) { return x + "°"; });
+      return mcq("Which angle is coterminal with " + th + "°?",
+        corr, u4dist3(corr, cands),
+        "Coterminal angles differ by a multiple of \\(360^\\circ\\). Since \\(" + th + "^\\circ " + (k >= 0 ? "- " + (360 * k) : "+ " + (360 * -k)) + "^\\circ = " + b + "^\\circ\\), the angle coterminal with " + th + "° in the interval from 0° to 360° is <b>" + b + "°</b>.",
+        { mode: "findDeg", b: b, k: k });
+    }
+    var d = pick(u4DEGS), kk = pick([1, 1, 2, -1]);
+    var given = d + 360 * kk;
+    var corrR = "\\(" + u4radS(d) + "\\)";
+    var candsR = [(d + 90) % 360, (d + 180) % 360, (360 - d) % 360, (d + 270) % 360, (d + 45) % 360].map(function (x) { return "\\(" + u4radS(x) + "\\)"; });
+    return mcq("Which angle is coterminal with \\(" + u4radBig(given) + "\\)?",
+      corrR, u4dist3(corrR, candsR),
+      "Coterminal angles differ by a multiple of \\(2\\pi\\). Since \\(" + u4radBig(given) + " " + (kk >= 0 ? "- " + (2 * kk) : "+ " + (2 * -kk)) + "\\pi = " + u4radS(d) + "\\), the angle coterminal with \\(" + u4radBig(given) + "\\) in the interval from 0 to \\(2\\pi\\) is <b>\\(" + u4radS(d) + "\\)</b>.",
+      { mode: "findRad", d: d, k: kk });
+  }
+  if (Math.random() < 0.6) {
+    var bb = pick([10, 20, 30, 40, 50, 60, 70, 80, 100, 110, 120, 130, 140, 150, 160, 170, 190, 200, 210, 220, 230, 240, 250, 260, 280, 290, 300, 310, 320, 330, 340, 350, -10, -20, -30, -40, -50, -60, -70, -80, -100, -110, -120, -130, -140, -150, -160, -170]);
+    var corrF = bb + "° + 360°n, n ∈ I";
+    var disF = shuffle([bb + "° + 180°n, n ∈ I", bb + "° + 90°n, n ∈ I", (bb + 360) + "° + 360°n, n ∈ I", (-bb) + "° + 360°n, n ∈ I"]).slice(0, 3);
+    return mcq("The general form of the measures of all angles coterminal with " + bb + "° is",
+      corrF, disF,
+      "Angles coterminal with " + bb + "° are found by adding or subtracting full rotations of \\(360^\\circ\\), so the general form is <b>" + corrF + "</b>.",
+      { mode: "formDeg", b: bb });
+  }
+  var dd2 = pick([30, 45, 60, 120, 135, 150, 210, 225, 240, 300, 315, 330]);
+  var corrG = "\\(" + u4radS(dd2) + " + 2\\pi n\\), \\(n \\in I\\)";
+  var disG = ["\\(" + u4radS(dd2) + " + \\pi n\\), \\(n \\in I\\)",
+    "\\(" + u4radBig(dd2 + 360) + " + 2\\pi n\\), \\(n \\in I\\)",
+    "\\(" + u4radSgn(-dd2) + " + 2\\pi n\\), \\(n \\in I\\)"];
+  return mcq("The general form of the measures of all angles coterminal with \\(" + u4radS(dd2) + "\\) is",
+    corrG, disG,
+    "Angles coterminal with \\(" + u4radS(dd2) + "\\) are found by adding or subtracting full rotations of \\(2\\pi\\), so the general form is <b>" + corrG + "</b>.",
+    { mode: "formRad", d: dd2 });
+});
+
+/* ---- 7.9: arc length a = r(theta), solved for each of the three quantities ---- */
+E("u4-arc-length", 4, ["7.9"], 2, "gen", function () {
+  var mode = pick(["a", "a", "r", "t", "deg"]);
+  if (mode === "a") {
+    var r = ri(3, 30), th = ri(4, 31) / 10, a = r * th;
+    return numq("An arc is cut on a circle of radius " + r + " cm by a central angle of " + fmt(th, 1) + " rad. What is the length of the arc, to the nearest tenth of a centimetre?",
+      Math.round(a * 10) / 10, 0.06,
+      "Arc length is \\(a = r\\theta\\), with the angle in radians: \\[ \\begin{aligned} a &= r\\theta \\\\ &= " + r + " \\times " + fmt(th, 1) + " \\\\ &= " + fmt(a, 1) + " \\text{ cm} \\end{aligned} \\] The arc length is <b>" + fmt(a, 1) + " cm</b>.",
+      { mode: "a", r: r, th: th });
+  }
+  if (mode === "r") {
+    var r2 = ri(3, 30), th2 = ri(4, 31) / 10, a2 = r2 * th2;
+    return numq("An arc of length " + fmt(a2, 1) + " cm is cut on a circle by a central angle of " + fmt(th2, 1) + " rad. What is the radius of the circle, in centimetres?",
+      r2, 0.01,
+      "Solve \\(a = r\\theta\\) for \\(r\\): \\[ \\begin{aligned} r &= \\frac{a}{\\theta} \\\\ &= \\frac{" + fmt(a2, 1) + "}{" + fmt(th2, 1) + "} \\\\ &= " + r2 + " \\text{ cm} \\end{aligned} \\] The radius is <b>" + r2 + " cm</b>.",
+      { mode: "r", r: r2, th: th2 });
+  }
+  if (mode === "t") {
+    var r3 = pick([4, 5, 8, 10, 20, 25, 40, 50]), th3 = ri(3, 30) / 10, a3 = r3 * th3;
+    return numq("An arc of length " + fmt(a3, 1) + " cm is cut on a circle of radius " + r3 + " cm. What is the measure of the central angle, to the nearest tenth of a radian?",
+      Math.round(th3 * 10) / 10, 0.06,
+      "Solve \\(a = r\\theta\\) for \\(\\theta\\): \\[ \\begin{aligned} \\theta &= \\frac{a}{r} \\\\ &= \\frac{" + fmt(a3, 1) + "}{" + r3 + "} \\\\ &= " + fmt(th3, 1) + " \\text{ rad} \\end{aligned} \\] The angle is <b>" + fmt(th3, 1) + " rad</b>.",
+      { mode: "t", r: r3, th: th3 });
+  }
+  var thD = pick([30, 45, 60, 90, 120, 135, 150, 180, 210, 240, 270, 300, 315, 330]), rD = ri(2, 20);
+  var aD = rD * thD * Math.PI / 180;
+  return numq("An arc is cut on a circle of radius " + rD + " cm by a central angle of " + thD + "°. What is the length of the arc, to the nearest tenth of a centimetre?",
+    Math.round(aD * 10) / 10, 0.06,
+    "The formula \\(a = r\\theta\\) needs the angle in radians: \\(" + thD + "^\\circ = " + u4radS(thD) + "\\) rad. Then \\[ \\begin{aligned} a &= r\\theta \\\\ &= " + rD + " \\times " + u4radS(thD) + " \\\\ &\\approx " + fmt(aD, 1) + " \\text{ cm} \\end{aligned} \\] The arc length is <b>" + fmt(aD, 1) + " cm</b>.",
+    { mode: "deg", r: rD, thD: thD });
+});
+
+/* ---- 7.10, 7.11: the equation of a circle centred at the origin ---- */
+E("u4-circle-equation", 4, ["7.10", "7.11"], 2, "gen", function () {
+  var mode = pick(["r", "diam", "fromEq", "point", "sqrt"]);
+  if (mode === "r") {
+    var r = ri(2, 15), corr = "\\(x^2 + y^2 = " + (r * r) + "\\)";
+    return mcq("What is the equation of the circle with centre (0, 0) and radius " + r + "?",
+      corr, ["\\(x^2 + y^2 = " + r + "\\)", "\\(x^2 + y^2 = " + (2 * r * r) + "\\)", "\\(x^2 - y^2 = " + (r * r) + "\\)"],
+      "A circle centred at the origin with radius \\(r\\) has equation \\(x^2 + y^2 = r^2\\). With \\(r = " + r + "\\): \\[ \\begin{aligned} x^2 + y^2 &= " + r + "^2 \\\\ &= " + (r * r) + " \\end{aligned} \\] The equation is <b>" + corr + "</b>.",
+      { mode: "r", r: r });
+  }
+  if (mode === "diam") {
+    var d = pick([6, 8, 10, 12, 14, 16, 18, 20, 22, 24]), rr = d / 2, corr2 = "\\(x^2 + y^2 = " + (rr * rr) + "\\)";
+    return mcq("What is the equation of the circle with centre (0, 0) and diameter " + d + "?",
+      corr2, ["\\(x^2 + y^2 = " + (d * d) + "\\)", "\\(x^2 + y^2 = " + rr + "\\)", "\\(x^2 - y^2 = " + (rr * rr) + "\\)"],
+      "The radius is half the diameter: \\(r = " + d + " \\div 2 = " + rr + "\\). Then \\[ \\begin{aligned} x^2 + y^2 &= r^2 \\\\ &= " + rr + "^2 \\\\ &= " + (rr * rr) + " \\end{aligned} \\] The equation is <b>" + corr2 + "</b>.",
+      { mode: "diam", d: d });
+  }
+  if (mode === "fromEq") {
+    var k = pick([9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196]), rk = Math.sqrt(k);
+    return mcq("What is the radius of the circle \\(x^2 + y^2 = " + k + "\\)?",
+      "" + rk, u4dist3("" + rk, ["" + k, "" + fmt(k / 2), "" + (2 * rk), "" + (rk + 1), "" + (3 * rk)]),
+      "Comparing with \\(x^2 + y^2 = r^2\\) gives \\(r^2 = " + k + "\\), so \\(r = \\sqrt{" + k + "} = " + rk + "\\). The radius is <b>" + rk + "</b>.",
+      { mode: "fromEq", k: k });
+  }
+  if (mode === "point") {
+    var pt = pick([[3, 4], [4, 3], [6, 8], [8, 6], [5, 12], [12, 5], [9, 12], [12, 9], [8, 15], [15, 8], [7, 24], [24, 7]]);
+    var r2v = pt[0] * pt[0] + pt[1] * pt[1], corr3 = "\\(x^2 + y^2 = " + r2v + "\\)";
+    return mcq("A circle with centre (0, 0) passes through the point (" + pt[0] + ", " + pt[1] + "). What is its equation?",
+      corr3, u4dist3(corr3, ["\\(x^2 + y^2 = " + (pt[0] + pt[1]) + "\\)", "\\(x^2 + y^2 = " + Math.abs(pt[0] * pt[0] - pt[1] * pt[1]) + "\\)", "\\(x^2 + y^2 = " + (2 * r2v) + "\\)", "\\((x - " + pt[0] + ")^2 + (y - " + pt[1] + ")^2 = " + r2v + "\\)"]),
+      "The radius squared is the squared distance from the origin to the point: \\[ \\begin{aligned} r^2 &= " + pt[0] + "^2 + " + pt[1] + "^2 \\\\ &= " + (pt[0] * pt[0]) + " + " + (pt[1] * pt[1]) + " \\\\ &= " + r2v + " \\end{aligned} \\] The equation is <b>" + corr3 + "</b>.",
+      { mode: "point", pt: pt });
+  }
+  var m = pick([2, 3, 5, 6, 7, 10, 11, 13, 14, 15]), corr4 = "\\(x^2 + y^2 = " + m + "\\)";
+  return mcq("What is the equation of the circle with centre (0, 0) and radius \\(\\sqrt{" + m + "}\\)?",
+    corr4, u4dist3(corr4, ["\\(x^2 + y^2 = \\sqrt{" + m + "}\\)", "\\(x^2 + y^2 = " + (2 * m) + "\\)", "\\(x^2 + y^2 = " + (m * m) + "\\)", "\\(x^2 + y^2 = " + (3 * m) + "\\)"]),
+    "Squaring the radius: \\(r^2 = \\left(\\sqrt{" + m + "}\\right)^2 = " + m + "\\), so the equation is <b>" + corr4 + "</b>.",
+    { mode: "sqrt", m: m });
+});
+
+/* ---- 7.12, 7.17: a point on the terminal arm (find a ratio, or find the angle) ---- */
+E("u4-point-ratios-angle", 4, ["7.12", "7.17"], 2, "gen", function () {
+  var trip = pick([[3, 4, 5], [4, 3, 5], [5, 12, 13], [12, 5, 13], [8, 15, 17], [15, 8, 17], [7, 24, 25], [24, 7, 25], [20, 21, 29], [9, 40, 41]]);
+  var sc = pick([1, 1, 2]), quad = ri(1, 4);
+  var sx = (quad === 2 || quad === 3) ? -1 : 1, sy = (quad === 3 || quad === 4) ? -1 : 1;
+  var X = sx * trip[0] * sc, Y = sy * trip[1] * sc, R = trip[2] * sc;
+  var fig = u4ptSVG(X, Y);
+  var q;
+  if (Math.random() < 0.55) {
+    var kind = pick(u4KINDS);
+    var vals = { sin: [Y, R], cos: [X, R], tan: [Y, X], csc: [R, Y], sec: [R, X], cot: [X, Y] };
+    var corr = "\\(" + u4fr(vals[kind][0], vals[kind][1]) + "\\)";
+    var cands = u4KINDS.map(function (k2) { return "\\(" + u4fr(vals[k2][0], vals[k2][1]) + "\\)"; });
+    cands.push("\\(" + u4fr(-vals[kind][0], vals[kind][1]) + "\\)");
+    q = mcq("The point P(" + X + ", " + Y + ") lies on the terminal arm of an angle \\(\\theta\\) in standard position. What is the value of \\(\\" + kind + "\\theta\\)?",
+      corr, u4dist3(corr, cands),
+      "First find \\(r\\): \\[ \\begin{aligned} r &= \\sqrt{x^2 + y^2} \\\\ &= \\sqrt{" + (X * X) + " + " + (Y * Y) + "} \\\\ &= " + R + " \\end{aligned} \\] With \\(x = " + X + "\\), \\(y = " + Y + "\\) and \\(r = " + R + "\\), the ratio \\(\\" + kind + "\\theta\\) is <b>" + corr + "</b>.",
+      { mode: "ratio", kind: kind, X: X, Y: Y });
+  } else {
+    var phi = Math.round(Math.atan2(Math.abs(Y), Math.abs(X)) * 180 / Math.PI);
+    var angs = [phi, 180 - phi, 180 + phi, 360 - phi];
+    var target = angs[quad - 1];
+    q = mcq("The point P(" + X + ", " + Y + ") lies on the terminal arm of an angle \\(\\theta\\) in standard position, with \\(0^\\circ \\le \\theta < 360^\\circ\\). What is the measure of \\(\\theta\\), to the nearest degree?",
+      target + "°", angs.filter(function (a) { return a !== target; }).map(function (a) { return a + "°"; }),
+      "The reference angle is \\(\\tan^{-1}\\left(\\frac{|y|}{|x|}\\right) = \\tan^{-1}\\left(\\frac{" + Math.abs(Y) + "}{" + Math.abs(X) + "}\\right) \\approx " + phi + "^\\circ\\). The point is in Quadrant " + ["I", "II", "III", "IV"][quad - 1] + ", so \\(\\theta = " + target + "^\\circ\\) to the nearest degree.",
+      { mode: "angle", X: X, Y: Y, quad: quad });
+  }
+  q.figure = fig;
+  return q;
+});
+
+/* ---- 7.13: approximate value of a ratio (calculator work, 3 decimal places) ---- */
+E("u4-approx-ratio", 4, ["7.13"], 2, "gen", function () {
+  var kind = pick(["sin", "cos", "tan"]);
+  if (Math.random() < 0.5) {
+    var deg = ri(12, 168);
+    while (deg % 15 === 0 || (kind === "tan" && deg > 78 && deg < 102)) deg = ri(12, 168);
+    var val = u4ratioVal(kind, deg), ans = Math.round(val * 1000) / 1000;
+    return numq("Determine the value of \\(\\" + kind + "(" + deg + "^\\circ)\\), to the nearest thousandth.",
+      ans, 0.0021,
+      "A calculator in degree mode gives \\(\\" + kind + "(" + deg + "^\\circ) \\approx " + fmt(val, 4) + "\\), which rounds to <b>" + fmt(ans, 3) + "</b>.",
+      { mode: "deg", kind: kind, deg: deg });
+  }
+  var t = ri(25, 290) / 100;
+  while (kind === "tan" && t > 1.4 && t < 1.75) t = ri(25, 290) / 100;
+  var val2 = kind === "sin" ? Math.sin(t) : kind === "cos" ? Math.cos(t) : Math.tan(t);
+  var ans2 = Math.round(val2 * 1000) / 1000;
+  return numq("Determine the value of \\(\\" + kind + "(" + fmt(t) + ")\\), where the angle is in radians, to the nearest thousandth.",
+    ans2, 0.0021,
+    "A calculator in radian mode gives \\(\\" + kind + "(" + fmt(t) + ") \\approx " + fmt(val2, 4) + "\\), which rounds to <b>" + fmt(ans2, 3) + "</b>.",
+    { mode: "rad", kind: kind, t: t });
+});
+
+/* ---- 7.14: exact value of a ratio at a special angle ---- */
+E("u4-exact-special", 4, ["7.14"], 2, "gen", function () {
+  var kind = pick(u4KINDS), d = pick(u4DEGS), ex = u4exact(kind, d);
+  while (!ex) { d = pick(u4DEGS); ex = u4exact(kind, d); }
+  var co = { sin: "cos", cos: "sin", tan: "cot", cot: "tan", csc: "sec", sec: "csc" }[kind];
+  var rec = { sin: "csc", csc: "sin", cos: "sec", sec: "cos", tan: "cot", cot: "tan" }[kind];
+  var coEx = u4exact(co, d), recEx = u4exact(rec, d);
+  var supp = d <= 180 ? 180 - d : 540 - d, suppEx = u4exact(kind, supp);
+  var plusEx = u4exact(kind, (d + 90) % 360);
+  var neg = ex.s === "0" ? null : (ex.s.charAt(0) === "-" ? ex.s.slice(1) : "-" + ex.s);
+  var cands = [neg, coEx ? coEx.s : null, recEx ? recEx.s : null, suppEx ? suppEx.s : null, plusEx ? plusEx.s : null,
+    "1", "-1", "\\frac{1}{2}", "-\\frac{1}{2}", "\\frac{\\sqrt{2}}{2}", "\\frac{\\sqrt{3}}{2}", "-\\frac{\\sqrt{3}}{2}", "0"];
+  var corr = "\\(" + ex.s + "\\)";
+  var dis = u4dist3(ex.s, cands).map(function (s) { return "\\(" + s + "\\)"; });
+  var rad = Math.random() < 0.5;
+  var angDisp = rad ? "\\(" + u4radS(d) + "\\)" : d + "°";
+  return mcq("What is the exact value of \\(\\" + kind + "(" + (rad ? u4radS(d) : d + "^\\circ") + ")\\)?",
+    corr, dis,
+    "The angle " + angDisp + " is in Quadrant " + ["I", "II", "III", "IV"][u4quadOf(d) - 1] + " with reference angle " + u4refOf(d) + "°. There, \\(\\" + kind + "\\theta\\) has the sign and size of the ratio at the reference angle, giving <b>" + corr + "</b>.",
+    { kind: kind, d: d, rad: rad });
+});
+
+/* ---- 7.16: angles in a domain from a given ratio value, quadrant specified ---- */
+E("u4-angle-from-ratio", 4, ["7.16"], 2, "gen", function () {
+  var kind = pick(["sin", "cos", "tan"]);
+  var signs = { sin: [1, 1, -1, -1], cos: [1, -1, -1, 1], tan: [1, -1, 1, -1] };
+  if (Math.random() < 0.55) {
+    var phi = ri(15, 75);
+    while (phi === 45) phi = ri(15, 75);
+    var sgn = pick([1, -1]), val = sgn * Math.abs(u4ratioVal(kind, phi));
+    var qs = [1, 2, 3, 4].filter(function (qq) { return signs[kind][qq - 1] === sgn; });
+    var q = pick(qs), angs = [phi, 180 - phi, 180 + phi, 360 - phi], target = angs[q - 1];
+    return mcq("If \\(\\" + kind + "\\theta = " + fmt(val, 3) + "\\) and \\(\\theta\\) is in Quadrant " + ["I", "II", "III", "IV"][q - 1] + ", what is the measure of \\(\\theta\\), to the nearest degree?",
+      target + "°", angs.filter(function (a) { return a !== target; }).map(function (a) { return a + "°"; }),
+      "The reference angle is \\(\\" + kind + "^{-1}(" + fmt(Math.abs(val), 3) + ") \\approx " + phi + "^\\circ\\). Placing that reference angle in Quadrant " + ["I", "II", "III", "IV"][q - 1] + " gives \\(\\theta = " + target + "^\\circ\\).",
+      { mode: "deg", kind: kind, phi: phi, q: q });
+  }
+  var phiD = pick([30, 45, 60]), sgn2 = pick([1, -1]);
+  var qs2 = [1, 2, 3, 4].filter(function (qq) { return signs[kind][qq - 1] === sgn2; });
+  var q2 = pick(qs2), angsD = [phiD, 180 - phiD, 180 + phiD, 360 - phiD], solD = angsD[q2 - 1];
+  var valStr = u4exact(kind, solD).s;
+  var corr = "\\(" + u4radS(solD) + "\\)";
+  var dis = angsD.filter(function (a) { return a !== solD; }).map(function (a) { return "\\(" + u4radS(a) + "\\)"; });
+  return mcq("If \\(\\" + kind + "\\theta = " + valStr + "\\) and \\(\\theta\\) is in Quadrant " + ["I", "II", "III", "IV"][q2 - 1] + ", with \\(0 \\le \\theta < 2\\pi\\), what is the value of \\(\\theta\\)?",
+    corr, dis,
+    "The reference angle for \\(\\" + kind + "\\theta = " + valStr + "\\) is " + phiD + "°, which is \\(" + u4radS(phiD) + "\\) rad. Placing it in Quadrant " + ["I", "II", "III", "IV"][q2 - 1] + " gives <b>" + corr + "</b>.",
+    { mode: "rad", kind: kind, phiD: phiD, q: q2 });
+});
+
+/* ---- 7.18: the other ratios from one given ratio in a specified domain ---- */
+E("u4-other-ratios", 4, ["7.18"], 2, "gen", function () {
+  var trip = pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29], [9, 40, 41]]);
+  var quad = ri(1, 4);
+  var sx = (quad === 2 || quad === 3) ? -1 : 1, sy = (quad === 3 || quad === 4) ? -1 : 1;
+  var X = sx * trip[0], Y = sy * trip[1], R = trip[2];
+  var vals = { sin: [Y, R], cos: [X, R], tan: [Y, X], csc: [R, Y], sec: [R, X], cot: [X, Y] };
+  var defs = { sin: "y/r", cos: "x/r", tan: "y/x", csc: "r/y", sec: "r/x", cot: "x/y" };
+  var gi = ri(0, 5), ai = ri(0, 5);
+  while (ai === gi) ai = ri(0, 5);
+  var gk = u4KINDS[gi], ak = u4KINDS[ai];
+  var gStr = u4fr(vals[gk][0], vals[gk][1]), aStr = u4fr(vals[ak][0], vals[ak][1]);
+  var corr = "\\(" + aStr + "\\)";
+  var cands = u4KINDS.map(function (k2) { return "\\(" + u4fr(vals[k2][0], vals[k2][1]) + "\\)"; });
+  cands.push("\\(" + u4fr(-vals[ak][0], vals[ak][1]) + "\\)", "\\(" + u4fr(vals[ak][1], vals[ak][0]) + "\\)");
+  var dom = pick(["\\(\\theta\\) is in Quadrant " + ["I", "II", "III", "IV"][quad - 1],
+    "\\(" + [(0), 90, 180, 270][quad - 1] + "^\\circ < \\theta < " + [90, 180, 270, 360][quad - 1] + "^\\circ\\)"]);
+  return mcq("If \\(\\" + gk + "\\theta = " + gStr + "\\) and " + dom + ", what is the value of \\(\\" + ak + "\\theta\\)?",
+    corr, u4dist3(corr, cands),
+    "From \\(\\" + gk + "\\theta = " + gStr + "\\), take \\(|x| = " + trip[0] + "\\), \\(|y| = " + trip[1] + "\\) and \\(r = " + R + "\\), a Pythagorean triple since \\(" + trip[0] + "^2 + " + trip[1] + "^2 = " + R + "^2\\). Quadrant " + ["I", "II", "III", "IV"][quad - 1] + " fixes the signs: \\(x = " + X + "\\), \\(y = " + Y + "\\). Then \\(\\" + ak + "\\theta = " + defs[ak] + " = \\) <b>" + corr + "</b>.",
+    { gk: gk, ak: ak, quad: quad });
+});
+
+/* ---- 7.19, 7.15: problem solving with ratios, each with its diagram ---- */
+E("u4-ratio-problem", 4, ["7.19", "7.15"], 2, "gen", function () {
+  var mode = pick(["kite", "shadow", "light", "ladder", "wire"]);
+  var q;
+  if (mode === "kite") {
+    var L = pick([25, 30, 40, 50, 60, 80]), ang = pick([30, 45, 60]), h = L * Math.sin(ang * Math.PI / 180);
+    q = numq("A kite is flying at the end of a " + L + " m string. The string is taut and makes an angle of " + ang + "° with the horizontal. What is the height of the kite above the ground, to the nearest tenth of a metre?",
+      Math.round(h * 10) / 10, 0.06,
+      "The string is the hypotenuse and the height is opposite the " + ang + "° angle: \\[ \\begin{aligned} \\sin(" + ang + "^\\circ) &= \\frac{h}{" + L + "} \\\\ h &= " + L + "\\sin(" + ang + "^\\circ) \\\\ &\\approx " + fmt(h, 1) + " \\text{ m} \\end{aligned} \\] The height is <b>" + fmt(h, 1) + " m</b>.",
+      { mode: mode, L: L, ang: ang });
+    q.figure = u4triSVG({ hypLab: L + " m", vlab: "?", angLab: ang + "°" });
+    return q;
+  }
+  if (mode === "shadow") {
+    var hb = pick([10, 12, 15, 18, 20, 24, 30]), angB = pick([30, 45, 60]), sh = hb / Math.tan(angB * Math.PI / 180);
+    q = numq("A building is " + hb + " m tall. The sun's rays make an angle of " + angB + "° with the ground. What is the length of the building's shadow, to the nearest tenth of a metre?",
+      Math.round(sh * 10) / 10, 0.06,
+      "The height is opposite the " + angB + "° angle and the shadow is adjacent to it: \\[ \\begin{aligned} \\tan(" + angB + "^\\circ) &= \\frac{" + hb + "}{s} \\\\ s &= \\frac{" + hb + "}{\\tan(" + angB + "^\\circ)} \\\\ &\\approx " + fmt(sh, 1) + " \\text{ m} \\end{aligned} \\] The shadow is <b>" + fmt(sh, 1) + " m</b> long.",
+      { mode: mode, hb: hb, ang: angB });
+    q.figure = u4triSVG({ vlab: hb + " m", hlab: "?", angLab: angB + "°" });
+    return q;
+  }
+  if (mode === "light") {
+    var hl = pick([18, 24, 30, 36, 45, 60]), angL = pick([30, 45, 60]), dist = hl / Math.tan(angL * Math.PI / 180);
+    q = numq("From the top of a lighthouse " + hl + " m above the water, the angle of depression of a boat is " + angL + "°. How far is the boat from the base of the lighthouse, to the nearest tenth of a metre?",
+      Math.round(dist * 10) / 10, 0.06,
+      "The angle of depression equals the angle of elevation from the boat. The height is opposite the " + angL + "° angle and the distance is adjacent to it: \\[ \\begin{aligned} \\tan(" + angL + "^\\circ) &= \\frac{" + hl + "}{d} \\\\ d &= \\frac{" + hl + "}{\\tan(" + angL + "^\\circ)} \\\\ &\\approx " + fmt(dist, 1) + " \\text{ m} \\end{aligned} \\] The boat is <b>" + fmt(dist, 1) + " m</b> from the base.",
+      { mode: mode, hl: hl, ang: angL });
+    q.figure = u4triSVG({ dep: true, vlab: hl + " m", hlab: "?", angLab: angL + "°" });
+    return q;
+  }
+  if (mode === "ladder") {
+    var tr = pick([[5, 3, 4], [5, 4, 3], [10, 6, 8], [10, 8, 6], [13, 5, 12], [13, 12, 5], [17, 8, 15], [17, 15, 8], [20, 12, 16], [20, 16, 12], [25, 7, 24], [25, 24, 7]]);
+    q = numq("A ladder " + tr[0] + " m long leans against a vertical wall. The foot of the ladder is " + tr[1] + " m from the wall. How high up the wall does the ladder reach, in metres?",
+      tr[2], 0.05,
+      "The ladder, the wall and the ground form a right triangle, so the height comes from the Pythagorean theorem: \\[ \\begin{aligned} h &= \\sqrt{" + tr[0] + "^2 - " + tr[1] + "^2} \\\\ &= \\sqrt{" + (tr[0] * tr[0] - tr[1] * tr[1]) + "} \\\\ &= " + tr[2] + " \\text{ m} \\end{aligned} \\] The ladder reaches <b>" + tr[2] + " m</b> up the wall.",
+      { mode: mode, tr: tr });
+    q.figure = u4triSVG({ hypLab: tr[0] + " m", hlab: tr[1] + " m", vlab: "?" });
+    return q;
+  }
+  var tw = pick([[13, 12, 5], [13, 5, 12], [17, 15, 8], [17, 8, 15], [25, 24, 7], [25, 7, 24], [10, 8, 6], [10, 6, 8], [5, 4, 3], [5, 3, 4]]);
+  q = numq("A guy wire " + tw[0] + " m long is attached to the top of a pole " + tw[1] + " m tall and anchored to the ground. How far from the base of the pole is the anchor, in metres?",
+    tw[2], 0.05,
+    "The wire, the pole and the ground form a right triangle, so the distance comes from the Pythagorean theorem: \\[ \\begin{aligned} d &= \\sqrt{" + tw[0] + "^2 - " + tw[1] + "^2} \\\\ &= \\sqrt{" + (tw[0] * tw[0] - tw[1] * tw[1]) + "} \\\\ &= " + tw[2] + " \\text{ m} \\end{aligned} \\] The anchor is <b>" + tw[2] + " m</b> from the base.",
+    { mode: mode, tw: tw });
+  q.figure = u4triSVG({ hypLab: tw[0] + " m", vlab: tw[1] + " m", hlab: "?" });
+  return q;
+});
+
+/* ---- 7.34, 7.36: solve a trigonometric equation exactly; verify a solution ---- */
+E("u4-solve-equation-exact", 4, ["7.34", "7.36"], 2, "gen", function () {
+  var kind = pick(["sin", "cos", "tan"]);
+  var refPool = kind === "cos" ? [30, 45, 60, 90] : [0, 30, 45, 60];
+  var refDeg = pick(refPool), sgn = pick([1, -1]);
+  var v = sgn * Math.abs(u4ratioVal(kind, refDeg));
+  var sols = u4DEGS.filter(function (d) { return Math.abs(u4ratioVal(kind, d) - v) < 1e-9; });
+  var valStr = u4exact(kind, sols[0]).s;
+  var form2 = Math.random() < 0.4;
+  var eqn = form2 ? "2\\" + kind + "\\theta = " + u4twoStr(kind, v) : "\\" + kind + "\\theta = " + valStr;
+  var rad = Math.random() < 0.6;
+  var domTxt = rad ? "\\(0 \\le \\theta < 2\\pi\\)" : "\\(0^\\circ \\le \\theta < 360^\\circ\\)";
+  if (Math.random() < 0.55) {
+    var s1 = sols[0], s2 = sols[1];
+    var corr = u4pairStr([s1, s2], rad);
+    var candPairs = [[s1, (360 - s1) % 360], [s2, (360 - s2) % 360], [(180 - s1 + 360) % 360, (180 + s1) % 360],
+      [s2, (360 - s1) % 360], [s1, (180 + s1) % 360], [(s1 + 180) % 360, (s2 + 180) % 360],
+      [0, 180], [45, 315], [135, 225], [60, 300], [30, 210], [150, 330], [120, 240]];
+    var candStrs = [];
+    candPairs.forEach(function (pr) { if (pr[0] !== pr[1]) candStrs.push(u4pairStr(pr, rad)); });
+    return mcq("Solve the equation \\(" + eqn + "\\) for " + domTxt + ".",
+      corr, u4dist3(corr, candStrs),
+      "Isolate the ratio: \\(\\" + kind + "\\theta = " + valStr + "\\). The reference angle is " + refDeg + "°, and the sign of the value places the solutions in the two quadrants where \\(\\" + kind + "\\theta\\) takes that sign. The solutions are <b>" + corr + "</b>.",
+      { mode: "pair", kind: kind, v: valStr, form2: form2, rad: rad });
+  }
+  var good = pick(sols);
+  var bads = shuffle(u4DEGS.filter(function (d) { return sols.indexOf(d) < 0; })).slice(0, 3);
+  var corrV = rad ? "\\(" + u4radS(good) + "\\)" : good + "°";
+  var disV = bads.map(function (d) { return rad ? "\\(" + u4radS(d) + "\\)" : d + "°"; });
+  return mcq("Which value of \\(\\theta\\) is a solution of the equation \\(" + eqn + "\\) for " + domTxt + "?",
+    corrV, disV,
+    "Substitute \\(\\theta = " + (rad ? u4radS(good) : good + "°") + "\\): the left side becomes \\(\\" + kind + "(" + (rad ? u4radS(good) : good + "^\\circ") + ") = " + valStr + "\\)" + (form2 ? ", and doubling gives " + u4twoStr(kind, v) : "") + ", which matches the equation. The value <b>" + corrV + "</b> is a solution.",
+    { mode: "verify", kind: kind, v: valStr, form2: form2, rad: rad });
+});
+
+/* ---- 7.35: approximate solutions of a trigonometric equation ---- */
+E("u4-solve-equation-approx", 4, ["7.35"], 2, "gen", function () {
+  var kind = pick(["sin", "cos", "tan"]);
+  var v = ri(12, 96) / 100 * pick([1, -1]);
+  var a = kind === "sin" ? Math.asin(v) : kind === "cos" ? Math.acos(v) : Math.atan(v);
+  var sols = kind === "sin" ? [u4wrap(a), u4wrap(Math.PI - a)] : kind === "cos" ? [u4wrap(a), u4wrap(-a)] : [u4wrap(a), u4wrap(a + Math.PI)];
+  sols.sort(function (x, y) { return x - y; });
+  var which = pick([0, 1]), target = sols[which];
+  var wName = which === 0 ? "smaller" : "larger";
+  var invTxt = "\\" + kind + "^{-1}(" + fmt(v) + ")";
+  if (Math.random() < 0.5) {
+    return numq("Solve the equation \\(\\" + kind + "\\theta = " + fmt(v) + "\\) for \\(0 \\le \\theta < 2\\pi\\). Give the " + wName + " solution, to the nearest hundredth.",
+      Math.round(target * 100) / 100, 0.006,
+      "Using the inverse ratio, one solution is \\(\\theta = " + invTxt + "\\); placing it and its symmetric partner in the interval gives \\(\\theta \\approx " + fmt(sols[0]) + "\\) and \\(\\theta \\approx " + fmt(sols[1]) + "\\). The " + wName + " solution is <b>" + fmt(target) + "</b>.",
+      { mode: "rad", kind: kind, v: v, which: which });
+  }
+  var tDeg = target * 180 / Math.PI;
+  return numq("Solve the equation \\(\\" + kind + "\\theta = " + fmt(v) + "\\) for \\(0^\\circ \\le \\theta < 360^\\circ\\). Give the " + wName + " solution, to the nearest tenth of a degree.",
+    Math.round(tDeg * 10) / 10, 0.06,
+    "Using the inverse ratio, one solution is \\(\\theta = " + invTxt + "\\); placing it and its symmetric partner in the interval gives \\(\\theta \\approx " + fmt(sols[0] * 180 / Math.PI, 1) + "^\\circ\\) and \\(\\theta \\approx " + fmt(sols[1] * 180 / Math.PI, 1) + "^\\circ\\). The " + wName + " solution is <b>" + fmt(tDeg, 1) + "°</b>.",
+    { mode: "deg", kind: kind, v: v, which: which });
+});
+
+/* ---- 7.37: identify and correct errors in a worked solution ---- */
+E("u4-error-analysis", 4, ["7.37"], 3, "var", varset([
+  function () {
+    return mcq("A student solves the equation \\(\\sin\\theta = \\frac{1}{2}\\) for \\(0 \\le \\theta < 2\\pi\\) and writes only \\(\\theta = \\frac{\\pi}{6}\\). What is the error in this solution?",
+      "The solution \\(\\theta = \\frac{5\\pi}{6}\\) in Quadrant II was missed",
+      ["The reference angle for \\(\\sin\\theta = \\frac{1}{2}\\) is \\(\\frac{\\pi}{3}\\), not \\(\\frac{\\pi}{6}\\)",
+        "\\(\\theta = \\frac{\\pi}{6}\\) does not satisfy the equation",
+        "The solutions should have been given in degrees, not radians"],
+      "Sine is positive in Quadrants I and II, so there are two solutions in the interval: \\(\\theta = \\frac{\\pi}{6}\\) and \\(\\theta = \\pi - \\frac{\\pi}{6} = \\frac{5\\pi}{6}\\). The error is the missed Quadrant II solution.",
+      { v: 1 });
+  },
+  function () {
+    return mcq("A student converts 150° to radians as shown: \\(150 \\times \\frac{180}{\\pi} \\approx 8594\\) rad. What is the error in this conversion?",
+      "The conversion factor was inverted; degrees must be multiplied by \\(\\frac{\\pi}{180}\\)",
+      ["The student should have divided 150 by 360 before converting",
+        "A radian measure can never exceed \\(2\\pi\\), so a full rotation should be subtracted first",
+        "The value 150 should have been replaced by its reference angle, 30"],
+      "To convert degrees to radians, multiply by \\(\\frac{\\pi}{180}\\), not by its reciprocal: \\[ \\begin{aligned} 150^\\circ &= 150 \\times \\frac{\\pi}{180} \\\\ &= \\frac{5\\pi}{6} \\\\ &\\approx 2.62 \\text{ rad} \\end{aligned} \\] The error is the inverted conversion factor.",
+      { v: 2 });
+  },
+  function () {
+    return mcq("A student solves \\(\\cos\\theta = -\\frac{\\sqrt{3}}{2}\\) for \\(0^\\circ \\le \\theta < 360^\\circ\\) and gives \\(\\theta = 150^\\circ\\) and \\(\\theta = 330^\\circ\\). Which statement about this solution is <b>NOT</b> correct?",
+      "\\(330^\\circ\\) is a solution, because cosine is negative in Quadrant IV",
+      ["\\(150^\\circ\\) is a correct solution",
+        "The reference angle is \\(30^\\circ\\)",
+        "\\(210^\\circ\\) is also a solution, because cosine is negative in Quadrant III"],
+      "Cosine is negative in Quadrants II and III only, so the solutions are \\(150^\\circ\\) and \\(210^\\circ\\). At \\(330^\\circ\\), in Quadrant IV, cosine is positive: \\(\\cos 330^\\circ = \\frac{\\sqrt{3}}{2}\\). The statement claiming \\(330^\\circ\\) is a solution with a negative cosine in Quadrant IV is the one that is NOT correct.",
+      { v: 3 });
+  },
+  function () {
+    return mcq("The point P(-3, 4) lies on the terminal arm of an angle \\(\\theta\\) in standard position. A student writes \\(\\sin\\theta = \\frac{4}{3}\\). What is the error in this value?",
+      "The student divided by the x-coordinate instead of by r; since \\(r = 5\\), \\(\\sin\\theta = \\frac{4}{5}\\)",
+      ["The sine value must be negative because the point is in Quadrant II",
+        "The student should have found \\(\\tan\\theta\\) first and worked from it",
+        "There is no error; \\(\\sin\\theta = \\frac{4}{3}\\)"],
+      "The distance from the origin is \\[ \\begin{aligned} r &= \\sqrt{(-3)^2 + 4^2} \\\\ &= \\sqrt{25} \\\\ &= 5 \\end{aligned} \\] so \\(\\sin\\theta = \\frac{y}{r} = \\frac{4}{5}\\). The student divided by 3, the size of the x-coordinate, in place of r. A sine value greater than 1 is also impossible.",
+      { v: 4 });
+  }
+]));
+
+/* ---- 7.10, 7.12: combine a circle equation with a quadrant and one coordinate ---- */
+E("u4-circle-point-reasoning", 4, ["7.10", "7.12"], 3, "gen", function () {
+  var trip = pick([[5, 3, 4], [13, 5, 12], [17, 8, 15], [25, 7, 24], [29, 20, 21], [41, 9, 40], [15, 9, 12], [10, 6, 8], [20, 12, 16]]);
+  var R = trip[0], a = trip[1], b = trip[2];
+  var quad = ri(1, 4);
+  var sx = (quad === 2 || quad === 3) ? -1 : 1, sy = (quad === 3 || quad === 4) ? -1 : 1;
+  var X = sx * a, Y = sy * b;
+  var giveX = Math.random() < 0.5;
+  var kind = pick(u4KINDS);
+  var vals = { sin: [Y, R], cos: [X, R], tan: [Y, X], csc: [R, Y], sec: [R, X], cot: [X, Y] };
+  var corr = "\\(" + u4fr(vals[kind][0], vals[kind][1]) + "\\)";
+  var cands = u4KINDS.map(function (k2) { return "\\(" + u4fr(vals[k2][0], vals[k2][1]) + "\\)"; });
+  cands.push("\\(" + u4fr(-vals[kind][0], vals[kind][1]) + "\\)");
+  var givenCoord = giveX ? "x" : "y", givenVal = giveX ? X : Y;
+  var otherName = giveX ? "y" : "x", otherVal = giveX ? Y : X, otherMag = giveX ? b : a;
+  return mcq("A point P lies on the terminal arm of an angle \\(\\theta\\) in standard position. P also lies on the circle \\(x^2 + y^2 = " + (R * R) + "\\) and in Quadrant " + ["I", "II", "III", "IV"][quad - 1] + ". The " + givenCoord + "-coordinate of P is " + givenVal + ". What is the value of \\(\\" + kind + "\\theta\\)?",
+    corr, u4dist3(corr, cands),
+    "The circle \\(x^2 + y^2 = " + (R * R) + "\\) has radius \\(r = " + R + "\\), so the " + otherName + "-coordinate has size \\(\\sqrt{" + R + "^2 - " + Math.abs(givenVal) + "^2} = " + otherMag + "\\); Quadrant " + ["I", "II", "III", "IV"][quad - 1] + " makes it " + otherVal + ". With \\(x = " + X + "\\), \\(y = " + Y + "\\) and \\(r = " + R + "\\), the ratio \\(\\" + kind + "\\theta\\) is <b>" + corr + "</b>.",
+    { kind: kind, quad: quad, giveX: giveX });
+});
+
+/* ---- 7.9, 7.3: compare arcs, transferring between degrees and radians ---- */
+E("u4-arc-compare", 4, ["7.9", "7.3"], 3, "gen", function () {
+  if (Math.random() < 0.5) {
+    var thA = ri(7, 26) / 10, degB = ri(35, 160), radB = degB * Math.PI / 180;
+    while (Math.abs(thA - radB) < 0.12) { degB = ri(35, 160); radB = degB * Math.PI / 180; }
+    var winA = thA > radB;
+    var corr = winA ? "Angle A cuts the longer arc" : "Angle B cuts the longer arc";
+    return mcq("Two angles in standard position cut arcs on the same circle. Angle A measures " + fmt(thA, 1) + " rad and angle B measures " + degB + "°. Which angle cuts the longer arc?",
+      corr, ["Angle A cuts the longer arc", "Angle B cuts the longer arc", "The two arcs are the same length", "The lengths cannot be compared without knowing the radius"].filter(function (s) { return s !== corr; }),
+      "On the same circle the radius is shared, so the larger angle cuts the longer arc. Convert B to radians: \\[ \\begin{aligned} " + degB + "^\\circ &= " + degB + " \\times \\frac{\\pi}{180} \\\\ &\\approx " + fmt(radB) + " \\text{ rad} \\end{aligned} \\] Angle A measures " + fmt(thA, 1) + " rad, so <b>" + corr.toLowerCase() + "</b>.",
+      { mode: "same", thA: thA, degB: degB });
+  }
+  var r1 = ri(5, 15), t1 = ri(7, 26) / 10, r2 = ri(5, 15), t2 = ri(7, 26) / 10;
+  while (Math.abs(r1 * t1 - r2 * t2) < 0.8) { t2 = ri(7, 26) / 10; r2 = ri(5, 15); }
+  var a1 = r1 * t1, a2 = r2 * t2, win1 = a1 > a2;
+  var corr2 = win1 ? "The arc on circle 1 is longer" : "The arc on circle 2 is longer";
+  return mcq("On circle 1, with radius " + r1 + " cm, a central angle of " + fmt(t1, 1) + " rad cuts an arc. On circle 2, with radius " + r2 + " cm, a central angle of " + fmt(t2, 1) + " rad cuts an arc. Which arc is longer?",
+    corr2, ["The arc on circle 1 is longer", "The arc on circle 2 is longer", "The two arcs are the same length", "The lengths cannot be compared because the radii are different"].filter(function (s) { return s !== corr2; }),
+    "Compute both arcs with \\(a = r\\theta\\): \\[ \\begin{aligned} a_1 &= " + r1 + " \\times " + fmt(t1, 1) + " = " + fmt(a1, 1) + " \\text{ cm} \\\\ a_2 &= " + r2 + " \\times " + fmt(t2, 1) + " = " + fmt(a2, 1) + " \\text{ cm} \\end{aligned} \\] <b>" + corr2 + "</b>.",
+    { mode: "diff", r1: r1, t1: t1, r2: r2, t2: t2 });
+});
+
+/* ================= Unit 5: Trigonometric Functions and Graphs ================= */
+/* ================= Unit 5: Trigonometric Functions and Graphs ================= */
+/* Helpers are prefixed u5. Angles are in degrees unless a question says radians. */
+
+function u5Eq(a,trig,bLab,h,k){
+  var aLab=(a===1?"":(a===-1?"-":(""+a)));
+  var arg;
+  if(h===0){arg=(bLab===""?"x":bLab+"x");}
+  else{arg=(bLab===""?"":bLab)+"(x "+(h>0?"- ":"+ ")+Math.abs(h)+"^\\circ)";}
+  var s="y = "+aLab+"\\"+trig+" "+arg;
+  if(k!==0)s+=(k>0?" + ":" - ")+Math.abs(k);
+  return s;
+}
+function u5Fn(a,trig,b,h,k){
+  return function(x){var ang=b*(x-h)*Math.PI/180;
+    return a*(trig==="sin"?Math.sin(ang):(trig==="cos"?Math.cos(ang):Math.tan(ang)))+k;};
+}
+function u5Plot(fn,x0,x1,y0,y1,o){
+  o=o||{};var W=440,H=250,pad=26;
+  var X=function(x){return pad+(x-x0)/(x1-x0)*(W-2*pad);};
+  var Y=function(y){return H-pad-(y-y0)/(y1-y0)*(H-2*pad);};
+  var out='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:440px;background:#fff;border:1px solid #d8d2c4;border-radius:6px" xmlns="http://www.w3.org/2000/svg">';
+  var gsx=o.gx||1,gsy=o.gy||1,gx,gy;
+  for(gx=Math.ceil(x0/gsx)*gsx;gx<=x1;gx+=gsx){out+='<line x1="'+fmt(X(gx),1)+'" y1="'+pad+'" x2="'+fmt(X(gx),1)+'" y2="'+(H-pad)+'" stroke="#eae5d6" stroke-width="1"/>';
+    if(o.labelX)out+='<text x="'+fmt(X(gx),1)+'" y="'+(H-6)+'" font-size="9" fill="#5a5344" text-anchor="middle">'+fmt(gx)+'</text>';}
+  for(gy=Math.ceil(y0/gsy)*gsy;gy<=y1;gy+=gsy){out+='<line x1="'+pad+'" y1="'+fmt(Y(gy),1)+'" x2="'+(W-pad)+'" y2="'+fmt(Y(gy),1)+'" stroke="#eae5d6" stroke-width="1"/>';
+    if(o.labelY&&gy!==0)out+='<text x="'+(pad-4)+'" y="'+fmt(Y(gy)+3,1)+'" font-size="9" fill="#5a5344" text-anchor="end">'+fmt(gy)+'</text>';}
+  if(y0<0&&y1>0)out+='<line x1="'+pad+'" y1="'+fmt(Y(0),1)+'" x2="'+(W-pad)+'" y2="'+fmt(Y(0),1)+'" stroke="#17352a" stroke-width="1.3"/>';
+  if(x0<0&&x1>0)out+='<line x1="'+fmt(X(0),1)+'" y1="'+pad+'" x2="'+fmt(X(0),1)+'" y2="'+(H-pad)+'" stroke="#17352a" stroke-width="1.3"/>';
+  out+='<text x="'+(W-pad-2)+'" y="'+fmt(Y(0)-6,1)+'" font-size="12" fill="#17352a" text-anchor="end">'+(o.xLab||"x")+'</text>';
+  out+='<text x="'+fmt(X(0)+6,1)+'" y="'+(pad-8)+'" font-size="12" fill="#17352a">'+(o.yLab||"y")+'</text>';
+  if(fn){
+    var pts=[],N=160,i,x,y;
+    for(i=0;i<=N;i++){x=x0+(x1-x0)*i/N;y=fn(x);if(y<y0)y=y0;if(y>y1)y=y1;pts.push(fmt(X(x),1)+","+fmt(Y(y),1));}
+    out+='<polyline points="'+pts.join(" ")+'" fill="none" stroke="#0f766e" stroke-width="2.2"/>';
+  }
+  (o.points||[]).forEach(function(p){out+='<circle cx="'+fmt(X(p[0]),1)+'" cy="'+fmt(Y(p[1]),1)+'" r="3.6" fill="#b3541e"/>';});
+  return out+'</svg>';
+}
+function u5Dis3(correct,pool){
+  var seen={},out=[];seen[String(correct)]=1;
+  for(var i=0;i<pool.length&&out.length<3;i++){var v=String(pool[i]);
+    if(!seen[v]){seen[v]=1;out.push(pool[i]);}}
+  return out.length===3?out:null;
+}
+function u5Solve(trig,b,c,D){
+  var out=[];
+  for(var th=0;th<b*D;th+=15){
+    var v=(trig==="sin"?Math.sin(th*Math.PI/180):Math.cos(th*Math.PI/180));
+    if(Math.abs(v-c)<1e-9){var x=th/b;if(x<D)out.push(Math.round(x*100)/100);}
+  }
+  return out;
+}
+function u5SetStr(xs){
+  return "\\(\\{"+xs.map(function(x){return fmt(x)+"^\\circ";}).join(", ")+"\\}\\)";
+}
+
+E("u5-base-graph",5,["7.20","7.21"],1,"var",varset([
+  function(){
+    var q=mcq("What is the <b>period</b> of the function shown?",
+      "360°",["180°","720°","90°"],
+      "One complete cycle of the sine wave spans from \\(0^\\circ\\) to \\(360^\\circ\\) before the pattern repeats, so the period is <b>360°</b>.",{});
+    q.figure=u5Plot(u5Fn(1,"sin",1,0,0),0,720,-1.6,1.6,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    var q=mcq("What is the <b>amplitude</b> of the function shown?",
+      "1",["0","2","360"],
+      "The cosine graph peaks at \\(y = 1\\) and bottoms out at \\(y = -1\\), oscillating about the midline \\(y = 0\\). The amplitude is the distance from the midline to a peak, which is <b>1</b>.",{});
+    q.figure=u5Plot(u5Fn(1,"cos",1,0,0),0,720,-1.6,1.6,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    var q=mcq("What is the <b>range</b> of the function shown?",
+      "\\(\\{y \\mid -1 \\le y \\le 1, \\ y \\in \\mathbb{R}\\}\\)",
+      ["\\(\\{y \\mid 0 \\le y \\le 1, \\ y \\in \\mathbb{R}\\}\\)",
+       "\\(\\{y \\mid -1 \\le y \\le 0, \\ y \\in \\mathbb{R}\\}\\)",
+       "\\(\\{y \\mid y \\ge -1, \\ y \\in \\mathbb{R}\\}\\)"],
+      "The sine graph reaches a lowest value of \\(y = -1\\) and a highest value of \\(y = 1\\), and takes every value in between. The range is <b>\\(-1 \\le y \\le 1\\)</b>.",{});
+    q.figure=u5Plot(u5Fn(1,"sin",1,0,0),0,720,-1.6,1.6,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    var q=mcq("How many <b>zeros</b> does the function shown have on \\(0^\\circ \\le x < 720^\\circ\\)?",
+      "4",["2","3","6"],
+      "The cosine graph crosses the x-axis at \\(x = 90^\\circ, 270^\\circ, 450^\\circ\\) and \\(630^\\circ\\), which is <b>4</b> zeros on the interval.",{});
+    q.figure=u5Plot(u5Fn(1,"cos",1,0,0),0,720,-1.6,1.6,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    var q=mcq("At which value of \\(x\\) in \\([0^\\circ, 360^\\circ)\\) does the function shown first reach its <b>minimum</b> value?",
+      "180°",["90°","270°","360°"],
+      "The cosine graph starts at its maximum when \\(x = 0^\\circ\\) and falls to its minimum halfway through the cycle, at \\(x = 180^\\circ\\).",{});
+    q.figure=u5Plot(u5Fn(1,"cos",1,0,0),0,720,-1.6,1.6,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;}
+]));
+E("u5-amplitude-a",5,["7.22"],1,"gen",function(){
+  var trig=pick(["sin","cos"]),aS=pick([-9,-8,-7,-6,-5,-4,-3,-2,2,3,4,5,6,7,8,9]),b=pick([1,2,3]);
+  var A=Math.abs(aS),bLab=(b===1?"":""+b);
+  var dis=u5Dis3(""+A,[""+(A+1),""+(A-1),""+(2*A)]);
+  return mcq("What is the <b>amplitude</b> of \\("+u5Eq(aS,trig,bLab,0,0)+"\\)?",
+    ""+A,dis,
+    "The amplitude is the absolute value of the coefficient of the trigonometric function: \\(|"+aS+"| = "+A+"\\). The sign only reflects the graph, and the "+b+" inside the argument affects the period, not the amplitude. The amplitude is <b>"+A+"</b>.",
+    {trig:trig,aS:aS,b:b});
+});
+E("u5-shift-k",5,["7.24"],1,"gen",function(){
+  var trig=pick(["sin","cos"]),k=pick([-5,-4,-3,-2,-1,1,2,3,4,5]),ask=pick(["midline","max","min","range"]);
+  var eq=u5Eq(1,trig,"",0,k);
+  if(ask==="midline"){
+    var dis=u5Dis3("y = "+k,["y = "+(-k),"y = "+(k+1),"y = "+(k-1)]);
+    return mcq("What is the equation of the <b>midline</b> of \\("+eq+"\\)?",
+      "y = "+k,dis,
+      "Adding "+k+" shifts every point of the base graph "+(k>0?"up":"down")+" by "+Math.abs(k)+", so the graph oscillates about the line \\(y = "+k+"\\) instead of \\(y = 0\\). The midline is <b>\\(y = "+k+"\\)</b>.",
+      {trig:trig,k:k,ask:ask});
+  }
+  if(ask==="max"){
+    var dis2=u5Dis3(""+(k+1),[""+(k-1),"1",""+(k+2),"-1","2",""+(k+3)]);
+    return mcq("What is the <b>maximum value</b> of \\("+eq+"\\)?",
+      ""+(k+1),dis2,
+      "The base function \\(\\"+trig+" x\\) has maximum value 1. The + "+k+" shifts the graph "+(k>0?"up":"down")+", so the maximum value becomes \\(1 + ("+k+") = "+(k+1)+"\\). The maximum value is <b>"+(k+1)+"</b>.",
+      {trig:trig,k:k,ask:ask});
+  }
+  if(ask==="min"){
+    var dis3=u5Dis3(""+(k-1),["-1",""+(k+1),""+(k-2),"1",""+(k-3),"0"]);
+    return mcq("What is the <b>minimum value</b> of \\("+eq+"\\)?",
+      ""+(k-1),dis3,
+      "The base function \\(\\"+trig+" x\\) has minimum value -1. The + "+k+" shifts the graph "+(k>0?"up":"down")+", so the minimum value becomes \\(-1 + ("+k+") = "+(k-1)+"\\). The minimum value is <b>"+(k-1)+"</b>.",
+      {trig:trig,k:k,ask:ask});
+  }
+  var corr="\\(["+(k-1)+", "+(k+1)+"]\\)";
+  var pool=["\\([-1, 1]\\)","\\(["+k+", "+(k+2)+"]\\)","\\(["+(k-2)+", "+k+"]\\)","\\(["+(k-1)+", "+(k+2)+"]\\)","\\([0, "+(2*k)+"]\\)","\\(["+(k-2)+", "+(k+2)+"]\\)"];
+  var dis4=u5Dis3(corr,pool);
+  return mcq("What is the <b>range</b> of \\("+eq+"\\)?",
+    corr,dis4,
+    "The base function takes values from -1 to 1. Shifting "+(k>0?"up":"down")+" by "+Math.abs(k)+" moves the whole band: the lowest value is \\(-1 + ("+k+") = "+(k-1)+"\\) and the highest is \\(1 + ("+k+") = "+(k+1)+"\\). The range is <b>\\(["+(k-1)+", "+(k+1)+"]\\)</b>.",
+    {trig:trig,k:k,ask:ask});
+});
+E("u5-period-b",5,["7.23"],2,"gen",function(){
+  var trig=pick(["sin","cos"]);
+  if(Math.random()<0.25){
+    var bR=pick([2,3,4,0.5]),per,corr,dis;
+    if(bR===2){corr="\\(\\pi\\)";dis=["\\(2\\pi\\)","\\(\\frac{\\pi}{2}\\)","\\(4\\pi\\)"];}
+    else if(bR===3){corr="\\(\\frac{2\\pi}{3}\\)";dis=["\\(2\\pi\\)","\\(\\frac{\\pi}{3}\\)","\\(6\\pi\\)"];}
+    else if(bR===4){corr="\\(\\frac{\\pi}{2}\\)";dis=["\\(2\\pi\\)","\\(\\frac{\\pi}{4}\\)","\\(\\pi\\)"];}
+    else{corr="\\(4\\pi\\)";dis=["\\(2\\pi\\)","\\(\\pi\\)","\\(\\frac{\\pi}{2}\\)"];}
+    per=corr;
+    var perIn=per.substring(2,per.length-2);
+    return mcq("What is the <b>period</b>, in radians, of \\("+u5Eq(1,trig,(bR===0.5?"\\frac{1}{2}":""+bR),0,0)+"\\) (with \\(x\\) in radians)?",
+      corr,dis,
+      "The base function has period \\(2\\pi\\). The coefficient \\(b = "+(bR===0.5?"\\frac{1}{2}":bR)+"\\) compresses or stretches the graph horizontally, giving period \\(\\frac{2\\pi}{b} = "+perIn+"\\). The period is <b>"+per+"</b>.",
+      {trig:trig,bR:bR,mode:"rad"});
+  }
+  var b=pick([2,3,4,0.5,1/3]),bLab=(b===0.5?"\\frac{1}{2}":(b===1/3?"\\frac{1}{3}":""+b));
+  var a=pick([1,2,3]),k=pick([-2,0,2]),P=Math.round(360/b);
+  var pool=["360",""+Math.round(360*b),""+Math.round(180/b),""+Math.round(720/b),""+Math.round(720*b),"90","270","120"];
+  var dis=u5Dis3(""+P,pool);
+  return mcq("What is the <b>period</b>, in degrees, of \\("+u5Eq(a,trig,bLab,0,k)+"\\)?",
+    ""+P,dis,
+    "The period is set by the coefficient of \\(x\\): \\[ \\begin{aligned} \\text{period} &= \\frac{360^\\circ}{b} \\\\ &= \\frac{360^\\circ}{"+(b===0.5?"\\frac{1}{2}":(b===1/3?"\\frac{1}{3}":b))+"} \\\\ &= "+P+"^\\circ \\end{aligned} \\] The amplitude and the vertical shift do not change the period. The period is <b>"+P+"°</b>.",
+    {trig:trig,b:b,a:a,k:k,mode:"deg"});
+});
+E("u5-phase-h",5,["7.25"],2,"gen",function(){
+  var trig=pick(["sin","cos"]),h=pick([15,30,45,60,90,-15,-30,-45,-60,-90]),b=pick([1,2,3]);
+  var bLab=(b===1?"":""+b),A=Math.abs(h);
+  var dir=(h>0?"right":"left"),odir=(h>0?"left":"right");
+  var corr="Shifted "+A+"° to the "+dir;
+  var dis=[("Shifted "+A+"° to the "+odir),("Shifted "+(2*A)+"° to the "+dir),("Shifted "+A+" units "+(h>0?"up":"down"))];
+  return mcq("How is the graph of \\("+u5Eq(1,trig,bLab,h,0)+"\\) obtained from the graph of \\("+u5Eq(1,trig,bLab,0,0)+"\\)?",
+    corr,dis,
+    "In the form \\(\\"+trig+" "+(b===1?"":b)+"(x - h)\\), the value \\(h = "+h+"^\\circ\\) is the phase shift. A positive \\(h\\) moves the graph to the right, and a negative \\(h\\) moves it to the left. Here the graph is <b>shifted "+A+"° to the "+dir+"</b>.",
+    {trig:trig,h:h,b:b});
+});
+E("u5-characteristics",5,["7.27"],2,"gen",function(){
+  var trig=pick(["sin","cos"]),a=pick([2,3,4]),b=pick([1,2]),h=pick([-60,-30,0,30,60]),k=pick([-2,-1,0,1,2,3]);
+  var ask=pick(["amplitude","period","midline","range","phase"]);
+  var eq=u5Eq(a,trig,(b===1?"":""+b),h,k),fn=u5Fn(a,trig,b,h,k);
+  var prompt,corr,dis,sol;
+  if(ask==="amplitude"){
+    corr=""+a;dis=u5Dis3(corr,[""+(a-1),""+(a+1),""+(2*a),"1"]);
+    prompt="For the function \\("+eq+"\\), graphed below, what is its <b>amplitude</b>?";
+    sol="The graph peaks "+a+" units above its midline \\(y = "+k+"\\), so the amplitude is <b>"+a+"</b>.";
+  }else if(ask==="period"){
+    var P=360/b;corr=""+P;dis=u5Dis3(corr,["180","360","720","90","120"]);
+    prompt="For the function \\("+eq+"\\), graphed below, what is its <b>period</b>, in degrees?";
+    sol="Peaks repeat every \\("+P+"^\\circ\\) on the graph, matching \\(\\frac{360^\\circ}{"+b+"} = "+P+"^\\circ\\). The period is <b>"+P+"°</b>.";
+  }else if(ask==="midline"){
+    corr="y = "+k;dis=u5Dis3(corr,["y = "+(-k),"y = "+a,"y = "+(k+a),"y = 1","y = -1","y = "+(k-a),"y = 0","y = "+(k+2)]);
+    prompt="For the function \\("+eq+"\\), graphed below, what is the equation of its <b>midline</b>?";
+    sol="The graph oscillates evenly between \\(y = "+(k+a)+"\\) and \\(y = "+(k-a)+"\\); the midline sits halfway between, at <b>\\(y = "+k+"\\)</b>.";
+  }else if(ask==="range"){
+    corr="\\(["+(k-a)+", "+(k+a)+"]\\)";
+    dis=u5Dis3(corr,["\\(["+(-a)+", "+a+"]\\)","\\(["+k+", "+(k+a)+"]\\)","\\(["+(k-a)+", "+k+"]\\)","\\(["+(k-1)+", "+(k+1)+"]\\)"]);
+    prompt="For the function \\("+eq+"\\), graphed below, what is its <b>range</b>?";
+    sol="The lowest point on the graph is \\(y = "+(k-a)+"\\) and the highest is \\(y = "+(k+a)+"\\), with every value in between attained. The range is <b>\\(["+(k-a)+", "+(k+a)+"]\\)</b>.";
+  }else{
+    if(h===0){corr="None (no horizontal shift)";dis=["45° to the right","90° to the left","180° to the right"];}
+    else{
+      var dir=(h>0?"right":"left"),odir=(h>0?"left":"right"),A=Math.abs(h);
+      corr=A+"° to the "+dir;
+      dis=[A+"° to the "+odir,(2*A)+"° to the "+dir,"A vertical shift of "+Math.abs(k)+" units"];
+    }
+    prompt="For the function \\("+eq+"\\), graphed below, what is its <b>phase shift</b>?";
+    sol=(h===0?"The argument is \\("+trig+" "+(b===1?"":b)+"x\\) with nothing subtracted from \\(x\\), so there is <b>no horizontal shift</b>.":"The shift is read from \\((x - ("+h+"^\\circ))\\): the graph is shifted <b>"+Math.abs(h)+"° to the "+(h>0?"right":"left")+"</b> from the base graph.");
+  }
+  var q=mcq(prompt,corr,dis,sol,{trig:trig,a:a,b:b,h:h,k:k,ask:ask});
+  q.figure=u5Plot(fn,0,540,Math.min(k-a-1,-2),Math.max(k+a+1,2),{gx:90,gy:1,labelX:true,labelY:true});
+  return q;
+});
+E("u5-eq-from-graph",5,["7.28"],2,"gen",function(){
+  var trig=pick(["sin","cos"]),a=pick([2,3,4]),b=pick([1,2]);
+  var k=pick([-3,-2,-1,1,2,3]);var tries=0;
+  while(k===a&&tries<40){k=pick([-3,-2,-1,1,2,3]);tries++;}
+  var bLab=(b===1?"":""+b),bOther=(b===1?"2":"");
+  var corr="\\("+u5Eq(a,trig,bLab,0,k)+"\\)";
+  var dis=["\\("+u5Eq(a,trig,bLab,0,-k)+"\\)",
+           "\\("+u5Eq(k,trig,bLab,0,a)+"\\)",
+           "\\("+u5Eq(a,trig,bOther,0,k)+"\\)"];
+  var q=mcq("Which function is shown in the graph?",
+    corr,dis,
+    "The graph oscillates between \\(y = "+(k+a)+"\\) and \\(y = "+(k-a)+"\\), so the midline is \\(y = "+k+"\\) and the amplitude is "+a+". It completes a cycle every "+(360/b)+"°, so \\(b = "+b+"\\), and its shape at \\(x = 0\\) is the "+(trig==="sin"?"sine":"cosine")+" shape. The function is <b>"+corr+"</b>.",
+    {trig:trig,a:a,b:b,k:k});
+  q.figure=u5Plot(u5Fn(a,trig,b,0,k),0,720,Math.min(k-a-1,-2),Math.max(k+a+1,2),{gx:90,gy:1,labelX:true,labelY:true});
+  return q;
+});
+E("u5-key-points",5,["7.26"],2,"gen",function(){
+  var trig=pick(["sin","cos"]),a=pick([2,3,4,5]),b=pick([1,2,3]),h=pick([-30,0,30,60]),k=pick([-3,-2,-1,0,1,2,3]);
+  var eq=u5Eq(a,trig,(b===1?"":""+b),h,k),ask=pick(["max","min","firstmax"]);
+  if(ask==="max"){
+    return numq("What is the <b>maximum value</b> of \\("+eq+"\\)?",
+      a+k,0.001,
+      "The trigonometric part tops out at 1, so the maximum value is \\("+a+"(1) + ("+k+") = "+(a+k)+"\\). The maximum value is <b>"+(a+k)+"</b>.",
+      {trig:trig,a:a,b:b,h:h,k:k,ask:ask});
+  }
+  if(ask==="min"){
+    return numq("What is the <b>minimum value</b> of \\("+eq+"\\)?",
+      k-a,0.001,
+      "The trigonometric part bottoms out at -1, so the minimum value is \\("+a+"(-1) + ("+k+") = "+(k-a)+"\\). The minimum value is <b>"+(k-a)+"</b>.",
+      {trig:trig,a:a,b:b,h:h,k:k,ask:ask});
+  }
+  var x;
+  if(trig==="sin"){x=h+90/b;}
+  else{x=(h>=0)?h:h+360/b;}
+  return numq("For \\("+eq+"\\), find the smallest value of \\(x \\ge 0^\\circ\\) at which the function reaches its <b>maximum</b> value.",
+    x,0.001,
+    "The maximum occurs where the argument of the "+(trig==="sin"?"sine":"cosine")+" equals "+(trig==="sin"?"\\(90^\\circ\\)":"\\(0^\\circ\\)")+" (or a full cycle later): \\[ \\begin{aligned} "+b+"(x "+(h>=0?"- "+h:"+ "+(-h))+") &= "+(trig==="sin"?"90":"0")+"^\\circ \\\\ x &= "+x+"^\\circ \\end{aligned} \\] The smallest such value with \\(x \\ge 0^\\circ\\) is <b>"+x+"°</b>.",
+    {trig:trig,a:a,b:b,h:h,k:k,ask:ask});
+});
+E("u5-tan-features",5,["7.32","7.33"],2,"gen",function(){
+  var b=pick([1,2]),s=pick([1,-1]),h=pick([0,30]),L=pick([360,540,720,900]);
+  var ask=pick(["period","asymcount","zerocount","range","domain"]);
+  var eq=u5Eq(s,"tan",(b===1?"":""+b),h,0);
+  var zeros=[],asym=[],n,x;
+  for(n=-2;n<50;n++){x=h+180*n/b;if(x>=0&&x<L)zeros.push(x);x=h+(90+180*n)/b;if(x>0&&x<L)asym.push(x);}
+  if(ask==="period"){
+    var P=180/b,dis=u5Dis3(""+P,["90","180","270","360","45"]);
+    return mcq("What is the <b>period</b>, in degrees, of \\("+eq+"\\)?",
+      ""+P,dis,
+      "The tangent function repeats every \\(180^\\circ\\); with the coefficient \\(b = "+b+"\\), the period is \\(\\frac{180^\\circ}{"+b+"} = "+P+"^\\circ\\). The period is <b>"+P+"°</b>.",
+      {b:b,s:s,h:h,ask:ask});
+  }
+  if(ask==="asymcount"){
+    var c1=asym.length,dis2=u5Dis3(""+c1,[""+(c1-1),""+(c1+1),""+(c1+2),""+(2*c1),""+(b*L/180)]);
+    return mcq("How many <b>vertical asymptotes</b> does the graph of \\("+eq+"\\) have on the interval \\(0^\\circ < x < "+L+"^\\circ\\)?",
+      ""+c1,dis2,
+      "The asymptotes of the tangent graph occur where its argument equals \\(90^\\circ + 180^\\circ n\\), here at \\(x = "+asym.map(function(v){return fmt(v)+"^\\circ";}).join(", ")+"\\). That is <b>"+c1+"</b> asymptotes on the interval.",
+      {b:b,s:s,h:h,L:L,ask:ask});
+  }
+  if(ask==="zerocount"){
+    var c2=zeros.length,dis3=u5Dis3(""+c2,[""+(c2-1),""+(c2+1),""+(c2+2),""+(2*c2),""+(b*L/180)]);
+    return mcq("How many <b>zeros</b> does the graph of \\("+eq+"\\) have on the interval \\(0^\\circ \\le x < "+L+"^\\circ\\)?",
+      ""+c2,dis3,
+      "The tangent graph crosses the x-axis where its argument equals \\(180^\\circ n\\), here at \\(x = "+zeros.map(function(v){return fmt(v)+"^\\circ";}).join(", ")+"\\). That is <b>"+c2+"</b> zeros on the interval.",
+      {b:b,s:s,h:h,L:L,ask:ask});
+  }
+  if(ask==="range"){
+    return mcq("What is the <b>range</b> of \\("+eq+"\\)?",
+      "\\(\\{y \\mid y \\in \\mathbb{R}\\}\\)",
+      ["\\(\\{y \\mid -1 \\le y \\le 1, \\ y \\in \\mathbb{R}\\}\\)",
+       "\\(\\{y \\mid y \\ge 0, \\ y \\in \\mathbb{R}\\}\\)",
+       "\\(\\{y \\mid y \\ne 0, \\ y \\in \\mathbb{R}\\}\\)"],
+      "Between consecutive asymptotes, the tangent graph climbs from the bottom of the graph to the top without skipping any value, so it takes <b>every real value</b>. Unlike sine and cosine, tangent is not trapped between -1 and 1.",
+      {b:b,s:s,h:h,ask:ask});
+  }
+  var st=h+90/b,step=180/b;
+  var corr="\\(x \\ne "+fmt(st)+"^\\circ + "+fmt(step)+"^\\circ n\\)";
+  var dis4=["\\(x \\ne "+fmt(h)+"^\\circ + "+fmt(step)+"^\\circ n\\)",
+            "\\(x \\ne "+fmt(st)+"^\\circ + "+fmt(2*step)+"^\\circ n\\)",
+            "\\(x \\in \\mathbb{R}\\)"];
+  return mcq("What is the <b>domain</b> of \\("+eq+"\\)?",
+    corr,dis4,
+    "Tangent is undefined where its argument equals \\(90^\\circ + 180^\\circ n\\). Solving \\("+b+"(x - "+h+"^\\circ) = 90^\\circ + 180^\\circ n\\) gives \\(x = "+fmt(st)+"^\\circ + "+fmt(step)+"^\\circ n\\), and these values are excluded from the domain: <b>"+corr+"</b>.",
+    {b:b,s:s,h:h,ask:ask});
+});
+E("u5-which-solution",5,["7.36","7.35"],2,"gen",function(){
+  var trig=pick(["sin","cos"]);
+  if(Math.random()<0.55){
+    var b=pick([1,2]);
+    var cs=[{v:0.5,lab:"\\frac{1}{2}"},{v:Math.sqrt(3)/2,lab:"\\frac{\\sqrt{3}}{2}"},{v:-0.5,lab:"-\\frac{1}{2}"},{v:-Math.sqrt(3)/2,lab:"-\\frac{\\sqrt{3}}{2}"},{v:0,lab:"0"},{v:1,lab:"1"}];
+    if(b===1)cs.push({v:Math.sqrt(2)/2,lab:"\\frac{\\sqrt{2}}{2}"},{v:-Math.sqrt(2)/2,lab:"-\\frac{\\sqrt{2}}{2}"});
+    var c=pick(cs),sols=u5Solve(trig,b,c.v,361),chosen=pick(sols);
+    var pool=[],xv;
+    for(xv=0;xv<=360;xv+=15){
+      var val=(trig==="sin"?Math.sin(b*xv*Math.PI/180):Math.cos(b*xv*Math.PI/180));
+      if(Math.abs(val-c.v)>0.05&&Math.abs(xv-chosen)>0.5)pool.push(xv);
+    }
+    pool=shuffle(pool);
+    var dis=pool.slice(0,3).map(function(v){return v+"°";});
+    return mcq("Which value of \\(x\\) is a <b>solution</b> of \\(\\"+trig+" "+(b===1?"":b)+"x = "+c.lab+"\\) for \\(0^\\circ \\le x \\le 360^\\circ\\)?",
+      chosen+"°",dis,
+      "Substitute the value: \\(\\"+trig+" "+(b===1?"":b)+"("+chosen+"^\\circ) = "+c.lab+"\\), so \\(x = "+chosen+"^\\circ\\) satisfies the equation. Each other listed value gives a different result when substituted. The solution shown is <b>"+chosen+"°</b>.",
+      {trig:trig,b:b,c:c.lab,fam:"special"});
+  }
+  var c2=pick([0.3,0.4,0.6,0.7,-0.3,-0.5,-0.7]),sols2,chosen2;
+  if(trig==="sin"){var bs=Math.asin(c2)*180/Math.PI;sols2=[((bs%360)+360)%360,((180-bs)%360+360)%360];}
+  else{var bc=Math.acos(c2)*180/Math.PI;sols2=[bc,360-bc];}
+  chosen2=pick(sols2);
+  var corr2=""+Math.round(chosen2);
+  var cand=[];
+  if(trig==="sin"){var ac=Math.acos(c2)*180/Math.PI;cand.push(Math.round(ac),Math.round(180-ac),Math.round(360-ac));}
+  else{var as=Math.asin(c2)*180/Math.PI;as=((as%360)+360)%360;cand.push(Math.round(as),Math.round(180-as),Math.round(360-as));}
+  cand.push(((Math.round(chosen2)+180)%360),Math.round(((360-chosen2)%360+360)%360),Math.round(chosen2)+45,Math.round(chosen2)-35,Math.round(chosen2)+100);
+  var disB=[],ci2;
+  for(ci2=0;ci2<cand.length&&disB.length<3;ci2++){
+    var cv=((cand[ci2]%360)+360)%360;
+    var nearSol=sols2.some(function(sv){return Math.abs(sv-cv)<2.5||Math.abs(sv-cv)>357.5;});
+    if(!nearSol&&(""+cv)!==corr2&&disB.indexOf(cv+"°")===-1)disB.push(cv+"°");
+  }
+  return mcq("Which value of \\(x\\) is an <b>approximate</b> solution of \\(\\"+trig+" x = "+c2+"\\) for \\(0^\\circ \\le x < 360^\\circ\\)?",
+    corr2+"°",disB,
+    "Using the inverse function, one solution is \\(x = \\"+trig+"^{-1}("+c2+") \\approx "+fmt(chosen2,1)+"^\\circ\\), which rounds to <b>"+corr2+"°</b>. (A calculator or a graph gives this approximate value; the equation has no exact special-angle solution.)",
+    {trig:trig,c:c2,fam:"approx"});
+});
+E("u5-solve-set",5,["7.34"],2,"gen",function(){
+  var trig,b,sgn,c,D,S,candSets,tries=0;
+  function sStr(arr){return u5SetStr(arr);}
+  do{
+    trig=pick(["sin","cos"]);b=pick([1,2,3]);sgn=pick([1,-1]);D=pick([180,360]);
+    var cands=[{v:0.5,lab:"\\frac{1}{2}"},{v:-0.5,lab:"-\\frac{1}{2}"},{v:Math.sqrt(3)/2,lab:"\\frac{\\sqrt{3}}{2}"},{v:0,lab:"0"}];
+    if(b===1)cands.push({v:Math.sqrt(2)/2,lab:"\\frac{\\sqrt{2}}{2}"},{v:-Math.sqrt(2)/2,lab:"-\\frac{\\sqrt{2}}{2}"},{v:1,lab:"1"},{v:-1,lab:"-1"});
+    c=pick(cands);
+    var ceff=sgn*c.v,other=(trig==="sin"?"cos":"sin");
+    S=u5Solve(trig,b,ceff,D);
+    var raw=[u5Solve(trig,b,-ceff,D),
+             u5Solve(other,b,ceff,D),
+             u5Solve(trig,2*b,ceff,D),
+             u5Solve(trig,b,ceff,D===180?360:180),
+             S.map(function(v){return 180-v;}).filter(function(v){return v>=0&&v<D;}).sort(function(p,q){return p-q;}),
+             S.map(function(v){return (v+180)%360;}).filter(function(v){return v<D;}).sort(function(p,q){return p-q;}),
+             S.concat([D])];
+    candSets=[];
+    raw.forEach(function(arr){
+      var st=sStr(arr);
+      if(arr.length&&st!==sStr(S)&&candSets.indexOf(st)===-1)candSets.push(st);
+    });
+    tries++;
+  }while((S.length===0||candSets.length<3)&&tries<80);
+  if(S.length===0||candSets.length<3){
+    trig="sin";b=1;sgn=1;D=360;c={v:0.5,lab:"\\frac{1}{2}"};
+    S=u5Solve(trig,b,0.5,360);
+    candSets=[sStr(u5Solve(trig,b,-0.5,360)),sStr(u5Solve("cos",b,0.5,360)),sStr(u5Solve(trig,2,0.5,360))];
+  }
+  var dis=candSets.slice(0,3);
+  var eqStr=(sgn===1?"":"-")+"\\"+trig+" "+(b===1?"":b)+"x = "+c.lab;
+  var negLab=(c.lab.charAt(0)==="-")?c.lab.slice(1):("-"+c.lab);
+  return mcq("Solve \\("+eqStr+"\\) for \\(0^\\circ \\le x < "+D+"^\\circ\\). Which list gives <b>all</b> of the solutions?",
+    sStr(S),dis,
+    "First solve on one cycle, then account for the coefficient of \\(x\\): \\[ \\begin{aligned} \\"+trig+" "+(b===1?"":b)+"x &= "+(sgn===1?c.lab:negLab)+" \\\\ x &= "+S.map(function(v){return fmt(v)+"^\\circ";}).join(", ")+" \\end{aligned} \\] Checking each listed value in the original equation confirms the solution set <b>"+sStr(S)+"</b>.",
+    {trig:trig,b:b,sgn:sgn,c:c.lab,D:D});
+});
+E("u5-general-solution",5,["7.38"],2,"gen",function(){
+  var trig=pick(["sin","cos"]),b=pick([1,2,3]),a=pick([2,3]),ask=pick(["general","zeroslist","zeroscount"]);
+  var eq=u5Eq(a,trig,(b===1?"":""+b),0,0);
+  function gs(s,p){return s===0?("\\(x = "+fmt(p)+"^\\circ n\\)"):("\\(x = "+fmt(s)+"^\\circ + "+fmt(p)+"^\\circ n\\)");}
+  if(ask==="general"){
+    var s0=(trig==="sin"?0:90/b),p0=180/b,sO=(trig==="sin"?90/b:0);
+    var corr=gs(s0,p0);
+    var pool=[gs(sO,p0),gs(s0,2*p0),gs(s0,360/b),gs(sO,2*p0),gs(s0,p0/2)];
+    var dis=u5Dis3(corr,pool);
+    return mcq("The zeros of \\("+eq+"\\) are exactly the solutions of \\(\\"+trig+" "+(b===1?"":b)+"x = 0\\). What is the <b>general solution</b> of \\(\\"+trig+" "+(b===1?"":b)+"x = 0\\), in degrees?",
+      corr,dis,
+      "The zeros repeat every \\("+fmt(p0)+"^\\circ\\), starting from "+(s0===0?"\\(0^\\circ\\)":"\\("+fmt(s0)+"^\\circ\\)")+". Listing the zeros of the function in order gives the pattern <b>"+corr+"</b>, where \\(n\\) is any integer.",
+      {trig:trig,b:b,a:a,ask:ask});
+  }
+  if(ask==="zeroslist"){
+    var S=u5Solve(trig,b,0,360),other=(trig==="sin"?"cos":"sin");
+    var pool2=[u5SetStr(u5Solve(other,b,0,360)),
+               u5SetStr(u5Solve(trig,b===1?2:1,0,360)),
+               u5SetStr(u5Solve(trig,b,0,180)),
+               u5SetStr(S.map(function(v){return (v+180/b)%360;}).sort(function(p,q){return p-q;}))];
+    var dis2=u5Dis3(u5SetStr(S),pool2);
+    return mcq("Which list gives all of the <b>zeros</b> of \\("+eq+"\\) on \\([0^\\circ, 360^\\circ)\\)?",
+      u5SetStr(S),dis2,
+      "Zeros occur where \\(\\"+trig+" "+(b===1?"":b)+"x = 0\\). On \\([0^\\circ, 360^\\circ)\\) these are <b>"+u5SetStr(S)+"</b>; extending the pattern by the period gives the general solution.",
+      {trig:trig,b:b,a:a,ask:ask});
+  }
+  var L=pick([360,720,1080]),cnt=u5Solve(trig,b,0,L).length;
+  var dis3=u5Dis3(""+cnt,[""+(cnt-1),""+(cnt+1),""+(cnt/2),""+(2*cnt),""+(b*L/360)]);
+  return mcq("How many <b>zeros</b> does \\("+eq+"\\) have on \\([0^\\circ, "+L+"^\\circ)\\)?",
+    ""+cnt,dis3,
+    "In each \\(360^\\circ\\) the graph crosses the x-axis "+(2*b)+" times (the zeros of \\(\\"+trig+" "+(b===1?"":b)+"x\\)), and the interval holds "+(L/360)+" such blocks, giving \\("+(2*b)+" \\times "+(L/360)+" = "+cnt+"\\) zeros. These are the first "+cnt+" values listed by the general solution. The count is <b>"+cnt+"</b>.",
+    {trig:trig,b:b,a:a,L:L,ask:ask});
+});
+function u5ModEq(fnName,D,A,trig,bDeg,sign){
+  return "\\("+fnName+"(t) = "+D+(sign<0?" - ":" + ")+(A===1?"":A)+"\\"+trig+"("+bDeg+"^\\circ t)\\)";
+}
+E("u5-model-build",5,["7.31"],3,"gen",function(){
+  var ctx=pick(["tide","wheel","buoy","temp"]),ask=pick(["equation","value"]);
+  var A,D,P,b,fnName,unit,thing,startMax,stemEq,stemVal,tVal,tLab;
+  if(ctx==="tide"){
+    A=pick([2,3,4]);D=pick([7,8,9,10]);P=pick([6,8,12]);b=360/P;fnName="d";unit="m";startMax=false;
+    stemEq="The depth of water at a harbour dock varies sinusoidally with time. At low tide, when \\(t = 0\\), the depth is "+(D-A)+" m, and at high tide the depth is "+(D+A)+" m. High tides occur every "+P+" hours.";
+    stemVal=stemEq;tLab="depth";
+  }else if(ctx==="wheel"){
+    A=pick([6,8,10]);var c0=pick([1,2,3]);D=A+c0;P=pick([6,8,12]);b=360/P;fnName="h";unit="m";startMax=false;
+    stemEq="A Ferris wheel has diameter "+(2*A)+" m, and its lowest point is "+c0+" m above the ground. A rider boards at the lowest point when \\(t = 0\\), and the wheel completes one revolution every "+P+" minutes.";
+    stemVal=stemEq;tLab="height";
+  }else if(ctx==="buoy"){
+    A=pick([1,2,3]);D=pick([8,10,12]);P=pick([6,8,10]);b=360/P;fnName="h";unit="m";startMax=true;
+    stemEq="A navigation buoy bobs up and down as waves pass. At \\(t = 0\\) the buoy is at the top of its motion, "+(D+A)+" m above the seabed, and it returns to the top every "+P+" seconds. Its lowest point is "+(D-A)+" m above the seabed.";
+    stemVal=stemEq;tLab="height";
+  }else{
+    A=pick([4,5,6]);D=pick([14,16,18]);P=24;b=15;fnName="T";unit="°C";startMax=false;
+    stemEq="The temperature inside a greenhouse varies sinusoidally over a day. The daily minimum of "+(D-A)+" °C is reached at \\(t = 0\\) (taken as 4:00 AM), and the daily maximum of "+(D+A)+" °C is reached 12 hours later. The pattern repeats every 24 hours.";
+    stemVal=stemEq;tLab="temperature";
+  }
+  var sign=startMax?1:-1;
+  if(ask==="equation"){
+    var corr=u5ModEq(fnName,D,A,"cos",b,sign);
+    var dis=[u5ModEq(fnName,D,A,"cos",b,-sign),
+             u5ModEq(fnName,D,A,"sin",b,sign),
+             u5ModEq(fnName,D,A,"cos",360/(2*P),sign)];
+    return mcq(stemEq+" Which function models the "+tLab+" "+(unit==="°C"?"\\(T\\)":"")+" after \\(t\\) "+(ctx==="buoy"?"seconds":(ctx==="wheel"?"minutes":"hours"))+"?",
+      corr,dis,
+      "The midline is the average of the extremes: \\(\\frac{"+(D-A)+" + "+(D+A)+"}{2} = "+D+"\\), and the amplitude is \\(\\frac{"+(D+A)+" - "+(D-A)+"}{2} = "+A+"\\). One cycle takes "+P+" "+(ctx==="buoy"?"seconds":(ctx==="wheel"?"minutes":"hours"))+", so the coefficient is \\(\\frac{360^\\circ}{"+P+"} = "+b+"^\\circ\\) per unit of \\(t\\). The motion starts at a "+(startMax?"maximum":"minimum")+", which calls for a "+(startMax?"positive":"negative")+" cosine. The model is <b>"+corr+"</b>.",
+      {ctx:ctx,A:A,D:D,P:P,ask:ask});
+  }
+  var tFrac=pick([1/4,1/2,1/6,1/3]),tv=P*tFrac,cosv=Math.cos(360*tFrac*Math.PI/180);
+  var val=D+sign*A*cosv;
+  return numq(stemVal+" What is the "+tLab+" at \\(t = "+fmt(tv)+"\\) "+(ctx==="buoy"?"seconds":(ctx==="wheel"?"minutes":"hours"))+"? Give the value in "+(unit==="°C"?"degrees Celsius":"metres")+".",
+    Math.round(val*100)/100,0.02,
+    "Build the model first: midline "+D+", amplitude "+A+", starting at a "+(startMax?"maximum":"minimum")+", so \\("+fnName+"(t) = "+D+" "+(sign<0?"-":"+")+" "+A+"\\cos("+b+"^\\circ t)\\). Then \\[ \\begin{aligned} "+fnName+"("+fmt(tv)+") &= "+D+" "+(sign<0?"-":"+")+" "+A+"\\cos("+(360*tFrac)+"^\\circ) \\\\ &= "+D+" "+(sign<0?"-":"+")+" "+A+"("+fmt(cosv)+") \\\\ &= "+fmt(val)+" \\end{aligned} \\] The "+tLab+" is <b>"+fmt(val)+" "+unit+"</b>.",
+    {ctx:ctx,A:A,D:D,P:P,ask:ask,tv:tv});
+});
+E("u5-model-conditions",5,["7.29","7.30"],3,"gen",function(){
+  var frame=pick([
+    {what:"the height, in centimetres, of a piston in an engine as it pumps",per:"seconds"},
+    {what:"the depth of water, in metres, at a dock as the tide comes and goes",per:"hours"},
+    {what:"the height, in metres, of a seat on a slowly rotating observation wheel",per:"minutes"}]);
+  var P=pick([6,8,12]),A=pick([3,4,5]),lo=pick([1,2]),trig=pick(["sin","cos"]);
+  var D=lo+A,hi=lo+2*A,b=360/P;
+  function eqS(aa,bb,dd){return "\\(y = "+(aa===1?"":aa)+"\\"+trig+" "+(bb===1?"":bb)+"x + "+dd+"\\)";}
+  var corr=eqS(A,b,D);
+  var dis=[eqS(A+1,b,D+1),eqS(A,2*b,D),eqS(A-1,2*b,D)];
+  return mcq("A sinusoidal function models "+frame.what+". The model must complete one full cycle every "+P+" "+frame.per+", and its values must run from "+lo+" to "+hi+". Which function satisfies <b>both</b> conditions?",
+    corr,dis,
+    "A period of "+P+" forces \\(b = \\frac{360}{"+P+"} = "+b+"\\), which rules out the options with \\("+(2*b)+"x\\). A range of "+lo+" to "+hi+" forces amplitude \\(\\frac{"+hi+" - "+lo+"}{2} = "+A+"\\) and midline \\(\\frac{"+hi+" + "+lo+"}{2} = "+D+"\\), which rules out the option with amplitude "+(A+1)+". The function that satisfies both conditions is <b>"+corr+"</b>.",
+    {P:P,A:A,lo:lo,trig:trig});
+});
+E("u5-graph-problem",5,["7.29"],3,"gen",function(){
+  var scen=pick(["tide","wheel","temp"]);
+  var A=pick([2,3,4]),D=pick([6,8,10]),form=pick([1,-1,0]);
+  var P,unit,thing,fn,xLab;
+  if(scen==="tide"){P=pick([6,12,24]);unit="m";thing="depth of water at a dock";xLab="t (h)";}
+  else if(scen==="wheel"){P=pick([6,12]);unit="m";thing="height of a gondola on a Ferris wheel";xLab="t (min)";}
+  else{P=24;unit="°C";thing="temperature in a greenhouse";xLab="t (h)";}
+  var b=360/P;
+  if(form===1)fn=function(x){return D+A*Math.cos(b*x*Math.PI/180);};
+  else if(form===-1)fn=function(x){return D-A*Math.cos(b*x*Math.PI/180);};
+  else fn=function(x){return D+A*Math.sin(b*x*Math.PI/180);};
+  var ask=pick(["aboveMid","aboveHalf","firstHalf"]);
+  if(ask==="aboveHalf"||ask==="firstHalf"){
+    if([6,12,24].indexOf(P)===-1)P=12;
+    b=360/P;
+    if(form===1)fn=function(x){return D+A*Math.cos(b*x*Math.PI/180);};
+    else if(form===-1)fn=function(x){return D-A*Math.cos(b*x*Math.PI/180);};
+    else fn=function(x){return D+A*Math.sin(b*x*Math.PI/180);};
+  }
+  var fig=u5Plot(fn,0,24,0,D+A+2,{gx:2,gy:1,labelX:true,labelY:true,xLab:xLab,yLab:""});
+  var stem="The graph shows the "+thing+" over 24 "+(scen==="wheel"?"minutes":"hours")+". ";
+  var q;
+  if(ask==="aboveMid"){
+    q=numq(stem+"For how long, in each complete cycle, is the value <b>above</b> "+D+" "+unit+"?",
+      P/2,0.01,
+      "The value "+D+" "+unit+" is the midline of the graph (halfway between "+(D-A)+" and "+(D+A)+"). A sinusoid spends exactly half of each cycle above its midline. The cycle length (peak to peak) is "+P+", so the value is above "+D+" "+unit+" for \\(\\frac{"+P+"}{2} = "+(P/2)+"\\) "+(scen==="wheel"?"minutes":"hours")+" per cycle. The answer is <b>"+(P/2)+"</b>.",
+      {scen:scen,A:A,D:D,P:P,form:form,ask:ask});
+  }else if(ask==="aboveHalf"){
+    var thr=D+A/2;
+    q=numq(stem+"For how long, in each complete cycle, is the value <b>at least</b> "+fmt(thr)+" "+unit+"?",
+      Math.round(P/3*100)/100,0.02,
+      "The level "+fmt(thr)+" "+unit+" sits halfway between the midline ("+D+") and the maximum ("+(D+A)+"), so it corresponds to a trigonometric value of \\(\\frac{1}{2}\\). The graph is at or above that level while the angle runs through a "+(form===0?"120":"120")+"° stretch of each 360° cycle (for example, from 30° to 150° for a sine arch, or within 60° of a peak for a cosine arch), which is \\(\\frac{1}{3}\\) of the "+P+" cycle: \\(\\frac{"+P+"}{3} = "+fmt(P/3)+"\\) "+(scen==="wheel"?"minutes":"hours")+". The answer is <b>"+fmt(P/3)+"</b>.",
+      {scen:scen,A:A,D:D,P:P,form:form,ask:ask});
+  }else{
+    var thr2=D+A/2,tFirst;
+    if(form===1)tFirst=P/6;else if(form===-1)tFirst=P/3;else tFirst=P/12;
+    q=numq(stem+"At what time does the value <b>first</b> reach "+fmt(thr2)+" "+unit+"?",
+      Math.round(tFirst*100)/100,0.02,
+      "The level "+fmt(thr2)+" "+unit+" is halfway between the midline and the maximum, a trigonometric value of \\(\\frac{1}{2}\\). Reading across from that level to the rising part of the graph and down to the time axis gives \\(t = "+fmt(tFirst)+"\\) "+(scen==="wheel"?"minutes":"hours")+" (equivalently, the angle "+(form===1?"60":(form===-1?"120":"30"))+"° is reached "+fmt(tFirst)+" into the "+P+" cycle). The answer is <b>"+fmt(tFirst)+"</b>.",
+      {scen:scen,A:A,D:D,P:P,form:form,ask:ask});
+  }
+  q.figure=fig;
+  return q;
+});
+E("u5-tan-graph",5,["7.32"],2,"var",varset([
+  function(){
+    var q=mcq("Which function is shown in the graph?",
+      "\\(y = \\tan x\\)",
+      ["\\(y = \\sin x\\)","\\(y = \\cos x\\)","\\(y = -\\tan x\\)"],
+      "The graph has vertical asymptotes and climbs steeply through the origin, repeating every \\(180^\\circ\\): that is the tangent graph, not a wave trapped between -1 and 1. The branches rise left to right, so the sign is positive. The function is <b>\\(y = \\tan x\\)</b>.",{});
+    q.figure=u5Plot(u5Fn(1,"tan",1,0,0),-360,360,-4,4,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    var q=mcq("Which function is shown in the graph?",
+      "\\(y = -\\tan x\\)",
+      ["\\(y = \\tan x\\)","\\(y = \\sin x\\)","\\(y = \\cos x\\)"],
+      "The graph has the tangent shape (vertical asymptotes, period \\(180^\\circ\\)), but each branch <b>falls</b> left to right, passing downward through the origin. That reflection in the x-axis gives <b>\\(y = -\\tan x\\)</b>.",{});
+    q.figure=u5Plot(u5Fn(-1,"tan",1,0,0),-360,360,-4,4,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;},
+  function(){
+    return mcq("Which statement about the graph of \\(y = \\tan x\\) is <b>true</b>?",
+      "It has period \\(180^\\circ\\), and its range is all real numbers",
+      ["It has period \\(360^\\circ\\), and its range is all real numbers",
+       "It has period \\(180^\\circ\\), and its range is \\([-1, 1]\\)",
+       "It has period \\(90^\\circ\\), and its zeros are at \\(90^\\circ + 180^\\circ n\\)"],
+      "Tangent repeats every \\(180^\\circ\\) and, between its asymptotes, takes every real value, so its range is all real numbers. The values \\(90^\\circ + 180^\\circ n\\) are where its asymptotes sit, not its zeros. The true statement is the period and range given in <b>the correct option</b>.",{});},
+  function(){
+    var q=mcq("The graph of \\(y = \\tan x\\) is shown. How many <b>vertical asymptotes</b> appear on the interval shown?",
+      "3",["2","4","5"],
+      "On \\([0^\\circ, 540^\\circ)\\) the tangent graph breaks at \\(x = 90^\\circ, 270^\\circ\\) and \\(450^\\circ\\), where the function is undefined. That is <b>3</b> vertical asymptotes.",{});
+    q.figure=u5Plot(u5Fn(1,"tan",1,0,0),0,540,-4,4,{gx:90,gy:1,labelX:true,labelY:true});
+    return q;}
+]));
 /* BANK-SRC-END */
 </script>
 
