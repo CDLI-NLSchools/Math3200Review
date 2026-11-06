@@ -4342,13 +4342,13 @@ E("u7-growth-decay-amount",7,["4.29"],2,"gen",function(){
   var fam=pick(["half","half","double","pct"]);
   if(fam==="half"){
     var ctx=pick([
-      {n:"A sample of a radioactive isotope",u:"mg"},
-      {n:"A dose of medication in a patient's bloodstream",u:"mg"},
-      {n:"A sample of carbon-14 in an old wooden artifact",u:"g"},
-      {n:"A quantity of a short-lived tracer dye",u:"mL"}]);
-    var base=pick([6,9,12,15,20,24,30,40,60,80,120]),j=ri(1,5),h=pick([2,3,4,5,6,8,10,12]);
+      {n:"A sample of a radioactive isotope",u:"mg",tu:"years",hs:[2,3,4,5,6,8,10,12,15,20]},
+      {n:"A dose of medication in a patient's bloodstream",u:"mg",tu:"hours",hs:[2,3,4,5,6,8,10,12]},
+      {n:"A sample of carbon-14 in an old wooden artifact",u:"g",tu:"years",hs:[5730]},
+      {n:"A quantity of a short-lived tracer dye",u:"mL",tu:"hours",hs:[1,2,3,4,5,6]}]);
+    var base=pick([6,9,12,15,20,24,30,40,60,80,120]),j=ri(1,5),h=pick(ctx.hs);
     var A0=base*Math.pow(2,j),t=j*h;
-    var tu=pick(["hours","days","years"]);
+    var tu=ctx.tu;
     return numq(ctx.n+" has a half-life of "+h+" "+tu+". A sample starts with "+A0+" "+ctx.u+". How much remains after "+t+" "+tu+"? Give the answer in "+ctx.u+".",
       base,0.1,
       "Use the half-life model with \\(t = "+t+"\\) and \\(h = "+h+"\\), so the sample passes through \\("+j+"\\) half-lives:"+
@@ -4369,19 +4369,24 @@ E("u7-growth-decay-amount",7,["4.29"],2,"gen",function(){
       {fam:fam,N0:N0,p:p,j:j2});
   }
   var grow=pick([true,false]);
-  var tab=grow?[[1.5,2],[1.5,3],[1.2,3],[1.25,2],[1.25,3],[1.1,3],[1.4,2]]:[[0.8,2],[0.8,3],[0.9,3],[0.75,2],[0.6,2]];
-  var pr=pick(tab),f=pr[0],n=pr[1],pct=Math.round(Math.abs(f-1)*100);
   var ctx3=grow?pick([
-      {s:"A town's population grows by "+pct+"% each year. The town starts with ",u:"people",ask:"What is the population after "},
-      {s:"The value of a vintage guitar increases by "+pct+"% each year. It is first valued at $",u:"",ask:"What is it worth after ",money:true},
-      {s:"A colony of honeybees grows by "+pct+"% each year. The colony starts with ",u:"bees",ask:"How many bees are there after "}])
+      {fs:[[1.01,2],[1.01,3],[1.02,2],[1.02,3],[1.03,2],[1.03,3],[1.04,2],[1.04,3]],a0s:[800,1000,1200,2000,2500,3000,4000,5000],
+       s:function(pct){return "A town's population grows by "+pct+"% each year. The town starts with ";},u:"people",ask:"What is the population after "},
+      {fs:[[1.05,2],[1.05,3],[1.06,2],[1.08,2],[1.08,3],[1.1,2],[1.1,3],[1.12,2],[1.12,3]],a0s:[400,500,600,800,1000,1200,1500,2000,2500],
+       s:function(pct){return "The value of a vintage guitar increases by "+pct+"% each year. It is first valued at $";},u:"",ask:"What is it worth after ",money:true},
+      {fs:[[1.1,2],[1.1,3],[1.15,2],[1.2,2],[1.2,3],[1.25,2],[1.3,2],[1.3,3],[1.4,2],[1.4,3]],a0s:[800,1000,1200,1500,2000,2500,3000,4000],
+       s:function(pct){return "A colony of honeybees grows by "+pct+"% each year. The colony starts with ";},u:"bees",ask:"How many bees are there after "}])
     :pick([
-      {s:"The resale value of a laptop decreases by "+pct+"% each year. It is bought for $",u:"",ask:"What is it worth after ",money:true},
-      {s:"The value of a used car decreases by "+pct+"% each year. It is first valued at $",u:"",ask:"What is it worth after ",money:true},
-      {s:"A stand of elm trees is shrinking by "+pct+"% each year. It starts with ",u:"trees",ask:"How many trees remain after "}]);
-  var A03=pick([200,400,500,800,1000,1200,2000,2500,4000]);
+      {fs:[[0.9,2],[0.9,3],[0.85,2],[0.85,3],[0.8,2],[0.8,3],[0.75,2],[0.75,3]],a0s:[400,500,600,800,1000,1200,1500,2000],
+       s:function(pct){return "The resale value of a laptop decreases by "+pct+"% each year. It is bought for $";},u:"",ask:"What is it worth after ",money:true},
+      {fs:[[0.85,2],[0.85,3],[0.8,2],[0.8,3],[0.75,2],[0.7,2],[0.7,3]],a0s:[2000,2500,3000,4000,5000,6000,8000,10000,12000],
+       s:function(pct){return "The value of a used car decreases by "+pct+"% each year. It is first valued at $";},u:"",ask:"What is it worth after ",money:true},
+      {fs:[[0.95,2],[0.95,3],[0.9,2],[0.9,3],[0.85,2],[0.85,3]],a0s:[200,400,500,800,1000,1200,2000,2500],
+       s:function(pct){return "A stand of elm trees is shrinking by "+pct+"% each year. It starts with ";},u:"trees",ask:"How many trees remain after "}]);
+  var pr=pick(ctx3.fs),f=pr[0],n=pr[1],pct=Math.round(Math.abs(f-1)*100);
+  var A03=pick(ctx3.a0s);
   var Aans=Math.round(A03*Math.pow(f,n)*100)/100;
-  return numq(ctx3.s+A03+(ctx3.u?" "+ctx3.u:"")+". "+ctx3.ask+n+" years?"+(ctx3.money?" Give the answer in dollars.":""),
+  return numq(ctx3.s(pct)+A03+(ctx3.u?" "+ctx3.u:"")+". "+ctx3.ask+n+" years?"+(ctx3.money?" Give the answer in dollars.":""),
     Aans,0.75,
     "Each year the quantity is multiplied by \\("+fmt(f,3)+"\\), so after \\("+n+"\\) years:"+
     "\\[ \\begin{aligned} A(t) &= "+A03+" ("+fmt(f,3)+")^{t} \\\\ A("+n+") &= "+A03+" ("+fmt(f,3)+")^{"+n+"} \\\\ &= "+A03+" \\times "+fmt(Math.pow(f,n),6)+" \\\\ &\\approx "+fmt(Aans,2)+" \\end{aligned} \\]",
@@ -4392,11 +4397,11 @@ E("u7-growth-decay-time",7,["4.29"],2,"gen",function(){
   var fam=pick(["half","half","double","triple","pct"]);
   if(fam==="half"){
     var ctx=pick([
-      {n:"A sample of a radioactive isotope",u:"mg"},
-      {n:"A dose of medication in a patient's bloodstream",u:"mg"},
-      {n:"A sample of a radioactive tracer",u:"g"}]);
-    var base=pick([5,8,10,15,20,25,40,50,60,100]),j=ri(2,6),h=pick([2,3,4,5,6,8,12]);
-    var A0=base*Math.pow(2,j),tu=pick(["hours","days","years"]),ans=j*h;
+      {n:"A sample of a radioactive isotope",u:"mg",tu:"years",hs:[2,3,4,5,6,8,10,12,15,20]},
+      {n:"A dose of medication in a patient's bloodstream",u:"mg",tu:"hours",hs:[2,3,4,5,6,8,10,12]},
+      {n:"A sample of a radioactive tracer",u:"g",tu:"hours",hs:[1,2,3,4,5,6]}]);
+    var base=pick([5,8,10,15,20,25,40,50,60,100]),j=ri(2,6),h=pick(ctx.hs);
+    var A0=base*Math.pow(2,j),tu=ctx.tu,ans=j*h;
     return numq(ctx.n+" has a half-life of "+h+" "+tu+". A sample starts with "+A0+" "+ctx.u+". How long does it take for only "+base+" "+ctx.u+" to remain? Give the answer in "+tu+".",
       ans,0.1,
       "The amount falls from \\("+A0+"\\) to \\("+base+"\\), a factor of \\(\\frac{"+base+"}{"+A0+"} = \\left(\\frac{1}{2}\\right)^{"+j+"}\\), so \\("+j+"\\) half-lives pass:"+
@@ -4441,9 +4446,12 @@ E("u7-model-equation",7,["4.30"],2,"gen",function(){
       "The area is multiplied by \\("+fS+"\\) once every \\("+p+"\\) days, so in \\(t\\) days the multiplication happens \\(\\frac{t}{"+p+"}\\) times. Starting from \\("+A0+"\\), the model is <b>"+corr+"</b>.",
       {fam:fam,mode:mode,A0:A0,p:p});
   }
-  var grow2=pick([true,false]);
-  var r=pick([10,20,25,30,40,50]),f2=grow2?1+r/100:1-r/100;
-  var A02=pick([800,1200,1500,2000,2500,3000,5000]);
+  var MC=pick([
+    {grow:true,rs:[1,2,3,4],a0s:[800,1200,1500,2000,2500,3000,5000]},
+    {grow:false,rs:[10,15,20,25,30],a0s:[800,1200,1500,2000,2500,3000,5000]}]);
+  var grow2=MC.grow;
+  var r=pick(MC.rs),f2=grow2?1+r/100:1-r/100;
+  var A02=pick(MC.a0s);
   var vname=grow2?"P":"V";
   var ctx2=grow2
     ?"A town has a population of "+A02+" and its population grows by "+r+"% each year."
