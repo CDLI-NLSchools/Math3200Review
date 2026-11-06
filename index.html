@@ -2731,7 +2731,7 @@ E("u5-characteristics",5,["7.27"],2,"gen",function(){
       dis=[A+"° to the "+odir,(2*A)+"° to the "+dir,"A vertical shift of "+Math.abs(k)+" units"];
     }
     prompt="For the function \\("+eq+"\\), graphed below, what is its <b>phase shift</b>?";
-    sol=(h===0?"The argument is \\("+trig+" "+(b===1?"":b)+"x\\) with nothing subtracted from \\(x\\), so there is <b>no horizontal shift</b>.":"The shift is read from \\((x - ("+h+"^\\circ))\\): the graph is shifted <b>"+Math.abs(h)+"° to the "+(h>0?"right":"left")+"</b> from the base graph.");
+    sol=(h===0?"The argument is \\(" + "\\" + trig + " " + (b===1?"":b) + "x\\) with nothing subtracted from \\(x\\), so there is <b>no horizontal shift</b>.":"The shift is read from \\((x - ("+h+"^\\circ))\\): the graph is shifted <b>"+Math.abs(h)+"° to the "+(h>0?"right":"left")+"</b> from the base graph.");
   }
   var q=mcq(prompt,corr,dis,sol,{trig:trig,a:a,b:b,h:h,k:k,ask:ask});
   q.figure=u5Plot(fn,0,540,Math.min(k-a-1,-2),Math.max(k+a+1,2),{gx:90,gy:1,labelX:true,labelY:true});
