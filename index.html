@@ -67,6 +67,12 @@
   .sheetPrev .ws{border-bottom:1px solid #ddd;}
   .sheetPrev.editing{outline:2px dashed var(--acc);outline-offset:3px;}
   .ws{border:1.5px solid #b9b2a2;border-radius:4px;margin:8px 0 4px;}
+  .recGrid{border-collapse:collapse;margin:8px 0 4px;}
+  .recGrid td{border:1px solid #999;padding:6px 12px;font-size:.98rem;white-space:nowrap;}
+  .recGrid .lt{margin:0 4px;color:#444;}
+  .recGrid .rk{color:#000;font-weight:700;text-decoration:underline;}
+  .solAppendix{columns:2;column-gap:30px;font-size:.85rem;line-height:1.45;}
+  .solAppendix .solp{break-inside:avoid;margin:0 0 9px;}
   .nameline{display:flex;gap:30px;font-size:.95rem;margin-bottom:14px;}
   .nameline span{border-bottom:1px solid #444;padding:0 90px 2px 6px;}
   @media print{
@@ -88,7 +94,7 @@
   <h1>Math 3200 Review</h1>
   <p class="sub">Fresh practice questions for Advanced Mathematics 3200, drawn by unit or by curriculum indicator.
   Most questions are generated new every time, so you can practise the same skill again and get a different question.
-  Work online, or print a practice sheet with an answer key.</p>
+  Work online, print a practice sheet or a no-choices worksheet, or build a practice exam.</p>
 
   <div class="card">
     <h2>1. What do you want to practise?</h2>
@@ -141,6 +147,8 @@
     <div class="modebar">
       <button type="button" id="goOnline">Practice online</button>
       <button type="button" id="goSheet" class="amber">Make a practice sheet</button>
+      <button type="button" id="goWorksheet" class="amber">Make a worksheet (no choices)</button>
+      <button type="button" id="goExam" class="amber">Make a practice exam</button>
       <button type="button" id="copyLink" class="alt">Copy link to these settings</button>
     </div>
     <p class="hint" id="poolInfo"></p>
@@ -6131,6 +6139,12 @@ E("u9-why-n-ge-r",9,["9.7","9.13"],3,"var",varset([
       {v:4});
   }
 ]));
+
+/* ============ Constructed-response fit (tagging pass, November 2026) ============ */
+/* Exam Section B draws only from these entries (marks per question); every other
+   entry is selected-response only in exam mode. Worksheet mode uses these plus
+   all numeric-answer entries. */
+var CR_MARKS={"u1-divide-quotient":2,"u1-divide-result":2,"u1-end-behaviour":1,"u1-equation-from-graph":3,"u1-error-synthetic":2,"u1-find-coefficient":2,"u1-modelling":3,"u1-multiplicity-graph":1,"u1-remainder-point":1,"u1-remainder-value":1,"u1-which-factor":2,"u1-zeros-from-factors":1,"u2-full-equation":2,"u2-inv-domran":1,"u2-inv-equation":2,"u2-inv-figure":1,"u2-inv-restrict":2,"u2-refl-equation":1,"u2-refl-point":1,"u2-stretch-equation":2,"u2-stretch-identify":1,"u2-stretch-point":2,"u2-trans-describe":1,"u2-trans-equation":2,"u2-trans-point":1,"u2-trans-zeros":3,"u3-graphical-solve":1,"u3-intercept-solution":2,"u3-recover-f-value":3,"u3-sqrtf-evaluate":2,"u3-sqrtx-table":1,"u3-start-point":1,"u3-transform-domain-range":2,"u4-angle-from-ratio":2,"u4-approx-ratio":1,"u4-arc-compare":2,"u4-arc-length":2,"u4-circle-equation":1,"u4-circle-point-reasoning":3,"u4-coterminal":1,"u4-deg-to-rad":1,"u4-exact-special":1,"u4-one-radian":1,"u4-other-ratios":2,"u4-point-ratios-angle":2,"u4-rad-to-deg":1,"u4-ratio-problem":2,"u4-sketch-standard-position":1,"u4-solve-equation-approx":2,"u4-solve-equation-exact":2,"u5-amplitude-a":1,"u5-base-graph":1,"u5-characteristics":1,"u5-general-solution":2,"u5-graph-problem":2,"u5-key-points":2,"u5-model-build":3,"u5-model-conditions":3,"u5-period-b":1,"u5-phase-h":1,"u5-shift-k":1,"u5-solve-set":2,"u5-tan-features":1,"u5-which-solution":1,"u6-approx-solutions":2,"u6-exact-values":2,"u6-nonpermissible-basic":2,"u6-nonpermissible-identity":2,"u6-numeric-verify":1,"u6-proof-invalid-step":3,"u6-simplify-expression":2,"u6-solve-double-angle":2,"u6-solve-identity-sub":3,"u6-solve-quadratic":2,"u6-verify-solution":1,"u7-common-base-linear":2,"u7-common-base-radical":2,"u7-compare-models":3,"u7-compound-amount":2,"u7-compound-setup":1,"u7-growth-decay-amount":1,"u7-growth-decay-time":2,"u7-model-equation":2,"u7-model-from-data":4,"u7-sketch-key-points":1,"u7-solve-nocommon-base":2,"u7-transformed-graph":2,"u8-convert-form":1,"u8-estimate-approx":1,"u8-exact-value":1,"u8-extraneous":3,"u8-finance-periods":2,"u8-growth-time":2,"u8-inverse-graph":1,"u8-laws-equivalent":2,"u8-log-scales":2,"u8-model-log":3,"u8-sketch-log":1,"u8-solve-exp-logs":2,"u8-solve-log-eq":2,"u8-transformed-log":1,"u9-binomial-expand":2,"u9-binomial-term":2,"u9-comb-basic":2,"u9-comb-symmetry-solve":2,"u9-counting-organizers":1,"u9-factorial-notation":1,"u9-fcp-apply":1,"u9-identical-elements":2,"u9-pascal-next-row":1,"u9-patterns-coefficients":2,"u9-perm-basic":2,"u9-perm-constraints":3,"u9-perm-or-comb":2,"u9-perm-solve":2};
 /* BANK-SRC-END */
 </script>
 
@@ -6140,8 +6154,9 @@ E("u9-why-n-ge-r",9,["9.7","9.13"],3,"var",varset([
    Units 1 to 4 whole; no unit is sampled partway, so no entry carries a postMid
    flag in this course and the Mid preset never caps the pool. The cap plumbing
    is retained from the 2201 chassis in case a future blueprint splits a unit. */
-function poolFor(units,inds,cap){
+function poolFor(units,inds,cap,pred){
   return BANK.filter(function(e){
+    if(pred&&!pred(e))return false;
     if(cap&&e.postMid)return false;
     if(units.indexOf(e.unit)<0)return false;
     if(inds&&inds.length){return e.indicators.some(function(c){return inds.indexOf(c)>=0;});}
@@ -6164,8 +6179,8 @@ function canonQ(q){ // canonical form of a generated question: normalized prompt
   else a="TXT:"+q.answers.slice().sort().join("|");
   return norm(q.prompt)+" || "+a;
 }
-function drawSet(units,inds,n,mix,orderMode,cap){
-  var pool=poolFor(units,inds,cap);if(!pool.length||n<1)return{items:[],short:0,pool:0,thin:false};
+function drawSet(units,inds,n,mix,orderMode,cap,pred){
+  var pool=poolFor(units,inds,cap,pred);if(!pool.length||n<1)return{items:[],short:0,pool:0,thin:false};
   var targets=levelTargets(n,mix);var chosen=[],used={};
   function take(level,count){
     var cands=shuffle(pool.filter(function(e){return e.level===level&&!used[e.id];}));
@@ -6424,18 +6439,21 @@ function gradeAll(){
   var b=$("gradeBtn");if(b){b.disabled=true;b.textContent="Answers checked";}
   $("score").scrollIntoView({behavior:"smooth",block:"center"});
 }
-function startSheet(){
-  var s=settings();var res=drawSet(s.units,s.inds,s.count,s.mix,s.order,s.midCap);
+var SHEET_MODE="sheet";
+function startSheet(){SHEET_MODE="sheet";startSheetMode();}
+function startWorksheet(){SHEET_MODE="worksheet";startSheetMode();}
+function startSheetMode(){
+  var s=settings();var res=drawSet(s.units,s.inds,s.count,s.mix,s.order,s.midCap,SHEET_MODE==="worksheet"?worksheetPred:null);
   if(!res.items.length){$("session").innerHTML='<div class="card"><p>'+(s.units.length?"No questions match that selection yet.":"Choose at least one unit above ,  or use the Mid-course review or Final review button ,  then start again.")+'</p></div>';return;}
   var unitNames=s.units.map(function(u){return "Unit "+u;}).join(", ");
   var html='<div class="nameline"><div>Name:<span></span></div><div>Date:<span></span></div></div>';
   var wsf=(typeof s.ws==="number"&&!isNaN(s.ws))?s.ws:1;
-  html+='<h1 style="font-size:1.3rem;">Math 3200: Practice Sheet</h1><p>'+unitNames+(s.inds.length?(" \u00B7 Indicators: "+s.inds.join(", ")):"")+' \u00B7 '+res.items.length+' questions \u00B7 '+(wsf>0?'Show all workings in the space provided.':'Show all workings on your own paper.')+'</p>';
+  html+='<h1 style="font-size:1.3rem;">'+(SHEET_MODE==="worksheet"?"Math 3200: Worksheet":"Math 3200: Practice Sheet")+'</h1><p>'+unitNames+(s.inds.length?(" \u00B7 Indicators: "+s.inds.join(", ")):"")+' \u00B7 '+res.items.length+' questions \u00B7 '+(wsf>0?'Show all workings in the space provided.':'Show all workings on your own paper.')+'</p>';
   res.items.forEach(function(q,i){
-    var h=Math.round((q._entry.level===3?170:(q.type==="mc"?120:150))*wsf);
+    var h=Math.round((q._entry.level===3?170:((q.type==="mc"&&SHEET_MODE!=="worksheet")?120:150))*wsf);
     html+='<div class="pq"><p><b>'+(i+1)+'.</b> <span style="font-size:.8rem;color:#555;">(Unit '+q._entry.unit+' \u00B7 '+q._entry.indicators.join(", ")+' \u00B7 Level '+q._entry.level+')</span></p><div class="prompt">'+stepHTML(q.prompt)+'</div>';
     if(q.figure)html+='<div class="fig">'+q.figure+'</div>';
-    if(q.type==="mc"){html+='<div class="opts">'+q.options.map(function(o){return '<label style="display:block;margin:4px 0;">\u25CB '+o+'</label>';}).join("")+'</div>';}
+    if(q.type==="mc"&&SHEET_MODE!=="worksheet"){html+='<div class="opts">'+q.options.map(function(o){return '<label style="display:block;margin:4px 0;">\u25CB '+o+'</label>';}).join("")+'</div>';}
     if(h>0)html+='<div class="ws" style="height:'+h+'px"></div>';
     html+='</div>';
   });
@@ -6447,7 +6465,7 @@ function startSheet(){
   });
   html+='</div>';
   $("printArea").innerHTML=html;
-  $("session").innerHTML='<div class="card"><p>Your practice sheet is ready ('+res.items.length+' questions, with the answer key on its own pages at the end). It is shown below, exactly as it will print.</p>'
+  $("session").innerHTML='<div class="card"><p>Your '+(SHEET_MODE==="worksheet"?"worksheet":"practice sheet")+' is ready ('+res.items.length+' questions, with the answer key on its own pages at the end). It is shown below, exactly as it will print.</p>'
     +(res.thin?'<p class="thinNote">Heads up: the question bank is still thin for this selection, so this sheet repeats practice on the same question shape (with new numbers) because there are not yet enough different questions to fill it.</p>':"")
     +'<div class="row"><button type="button" id="editBtn">Edit the sheet</button><button type="button" id="copyBtn" class="sec">Copy for Google Docs / Word</button><button type="button" id="printBtn" class="sec">Print / save the sheet</button></div>'
     +'<p class="hint" id="editHint" hidden>Editing is on: click any text in the sheet below and type to change it, or delete a question you do not want. What you see is what prints. Most math is regular text and can be changed directly; typeset expressions are rendered, so if you need different numbers in one of those, regenerate the sheet instead.</p>'
@@ -6473,6 +6491,120 @@ function copySheet(){
       navigator.clipboard.write([item]).then(function(){done(true);},function(){fallback();});
     }catch(e){fallback();}
   } else fallback();
+}
+var _probeCache={};
+function probeType(e){if(_probeCache[e.id])return _probeCache[e.id];var t="mc";try{var q=e.gen();if(q&&q.type)t=q.type;}catch(err){}_probeCache[e.id]=t;return t;}
+function worksheetPred(e){return (typeof CR_MARKS!=="undefined"&&CR_MARKS[e.id]!==undefined)||probeType(e)==="num"||probeType(e)==="txt";}
+function subsetSumMarks(entries,target){
+  var arr=shuffle(entries.slice());var dp={0:[]};
+  for(var i=0;i<arr.length;i++){var m=arr[i].marks;var keys=Object.keys(dp).map(Number).sort(function(a,b){return b-a;});
+    for(var k=0;k<keys.length;k++){var s2=keys[k]+m;if(s2<=target&&!dp[s2]){dp[s2]=dp[keys[k]].concat([arr[i]]);if(s2===target)return dp[s2];}}}
+  return dp[target]||null;
+}
+function composeExam(units,inds){
+  var single=units.length===1;
+  var srT=single?[4,6,1]:[10,15,2];
+  var crTotal=single?14:23;
+  var pool=poolFor(units,inds,false);
+  if(!pool.length)return null;
+  var seen={};
+  function genFrom(e){var q=e.gen();q._entry=e;return q;}
+  var srItems=[];
+  function takeSR(level,count){
+    var cands=pool.filter(function(e){return e.level===level&&probeType(e)==="mc";});
+    var guard=0;
+    while(count>0&&guard++<500&&cands.length){
+      var q=genFrom(pick(cands));var c=canonQ(q);
+      if(q.type!=="mc"||seen[c])continue;seen[c]=1;srItems.push({q:q,marks:1});count--;
+    }
+    return count;
+  }
+  var miss=0;for(var L=1;L<=3;L++){miss+=takeSR(L,srT[L-1]);}
+  var srOff=miss>0;
+  if(miss>0){ // backfill SR slots from multiple choice entries at any level in scope
+    var allC=pool.filter(function(e){return probeType(e)==="mc";});var guard2=0;
+    while(miss>0&&guard2++<800&&allC.length){var qb=genFrom(pick(allC));var cb=canonQ(qb);if(qb.type!=="mc"||seen[cb])continue;seen[cb]=1;srItems.push({q:qb,marks:1});miss--;}
+  }
+  var crPool=pool.filter(function(e){return typeof CR_MARKS!=="undefined"&&CR_MARKS[e.id]!==undefined&&CR_MARKS[e.id]>=2&&e.level>=2;}).map(function(e){return{e:e,marks:CR_MARKS[e.id]};});
+  var l3=crPool.filter(function(x){return x.e.level===3;}),l2=crPool.filter(function(x){return x.e.level===2;});
+  var l3pick=null,l3sum=0;var t3=single?[5,4,6]:[7,8,9];
+  for(var t=0;t<t3.length&&!l3pick;t++){l3pick=subsetSumMarks(l3,t3[t]);if(l3pick)l3sum=t3[t];}
+  var crItems=[],crMarks=0,short=miss>0||srOff;
+  if(l3pick){
+    var l2pick=subsetSumMarks(l2,crTotal-l3sum);
+    if(l2pick){
+      var seenC={};
+      l3pick.concat(l2pick).forEach(function(x){var q=null,c=null,tries=0;do{q=genFrom(x.e);c=canonQ(q);tries++;}while(seenC[c]&&tries<25);seenC[c]=1;crItems.push({q:q,marks:x.marks});});
+      crItems.sort(function(a,b){return a.q._entry.unit-b.q._entry.unit||a.q._entry.level-b.q._entry.level;});
+      crMarks=crTotal;
+    } else short=true;
+  } else short=true;
+  if(short&&crItems.length===0&&crPool.length){
+    var rest=crPool.slice().sort(function(a,b){return b.e.level-a.e.level||Math.random()-0.5;});
+    var sum=0,seenG={};
+    for(var gi=0;gi<rest.length;gi++){var x=rest[gi];if(sum+x.marks>crTotal)continue;var q2=null,c2=null,tries=0;do{q2=genFrom(x.e);c2=canonQ(q2);tries++;}while(seenG[c2]&&tries<25);seenG[c2]=1;crItems.push({q:q2,marks:x.marks});sum+=x.marks;}
+    crItems.sort(function(a,b){return a.q._entry.unit-b.q._entry.unit||a.q._entry.level-b.q._entry.level;});
+    crMarks=sum;l3sum=crItems.filter(function(it){return it.q._entry.level===3;}).reduce(function(a,it){return a+it.marks;},0);
+  }
+  return {srItems:srItems,crItems:crItems,srMarks:srItems.length,crMarks:crMarks,l3Marks:l3sum,total:srItems.length+crMarks,single:single,short:short};
+}
+function recGrid(items,withKey){
+  var n=items.length,cols=n<=11?2:3,per=Math.ceil(n/cols);
+  var h='<table class="recGrid"><tbody>';
+  for(var r=0;r<per;r++){h+='<tr>';
+    for(var c=0;c<cols;c++){var ix=c*per+r;
+      if(ix>=n){h+='<td></td>';continue;}
+      var cell='<b>'+(ix+1)+'.</b> ';
+      for(var L=0;L<4;L++){var isK=withKey&&items[ix].q.correct===L;cell+='<span class="lt'+(isK?' rk':'')+'">'+"ABCD"[L]+ '</span>';}
+      h+='<td>'+cell+'</td>';}
+    h+='</tr>';}
+  return h+'</tbody></table>';
+}
+function startExam(){
+  var s=settings();
+  var ex=composeExam(s.units,s.inds);
+  if(!ex||(!ex.srItems.length&&!ex.crItems.length)){$("session").innerHTML='<div class="card"><p>'+(s.units.length?"No questions match that selection yet.":"Choose at least one unit above, or use the Mid-course review or Final review button, then start again.")+'</p></div>';return;}
+  var single=s.units.length===1;
+  var wsf=(typeof s.ws==="number"&&!isNaN(s.ws))?s.ws:1;
+  var scope=single?("Unit "+s.units[0]+" \u00B7 "+UNITS[s.units[0]]):s.units.map(function(u){return "Unit "+u;}).join(", ");
+  var title=single?"Math 3200: Practice Unit Test":"Math 3200: Practice Exam";
+  var paper='<div class="nameline"><div>Name:<span></span></div><div>Date:<span></span></div></div>';
+  paper+='<h1 style="font-size:1.3rem;">'+title+'</h1><p>'+scope+' \u00B7 Total marks: '+ex.total+'</p>';
+  paper+='<p style="font-size:.92rem;">Answer all questions. In Section A, choose the best answer for each question and record it on the answer record at the end of Section A. In Section B, show all workings in the space provided; marks are shown beside each question.</p>';
+  var n=0;
+  paper+='<h2 style="font-size:1.05rem;">Section A: Selected Response ('+ex.srMarks+' marks)</h2>';
+  ex.srItems.forEach(function(it){n++;var q=it.q;
+    paper+='<div class="pq"><p><b>'+n+'.</b></p><div class="prompt">'+stepHTML(q.prompt)+'</div>';
+    if(q.figure)paper+='<div class="fig">'+q.figure+'</div>';
+    if(q.type==="mc")paper+='<div class="opts">'+q.options.map(function(o,oi){return '<label style="display:block;margin:4px 0;"><b>'+"ABCD"[oi]+'.</b> '+o+'</label>';}).join("")+'</div>';
+    paper+='</div>';});
+  paper+='<h2 style="font-size:1.05rem;">Answer record</h2><p style="font-size:.92rem;">Circle one letter for each Section A question.</p>'+recGrid(ex.srItems,false);
+  paper+='<h2 style="font-size:1.05rem;">Section B: Constructed Response ('+ex.crMarks+' marks)</h2>';
+  if(!ex.crItems.length)paper+='<p>No constructed-response questions are available for this selection yet.</p>';
+  ex.crItems.forEach(function(it){n++;var q=it.q;
+    paper+='<div class="pq"><p><b>'+n+'.</b> <span style="font-size:.85rem;color:#555;">('+it.marks+' marks)</span></p><div class="prompt">'+stepHTML(q.prompt)+'</div>';
+    if(q.figure)paper+='<div class="fig">'+q.figure+'</div>';
+    var h=Math.max(80,Math.round(it.marks*62*wsf));if(wsf>0)paper+='<div class="ws" style="height:'+h+'px"></div>';
+    paper+='</div>';});
+  paper+='<p style="font-size:.85rem;color:#555;">Built to the provincial exam pattern for this course (50 marks, with Levels 1, 2 and 3 weighted 10, 31 and 9) as closely as the question bank allows: selected response '+ex.srMarks+' marks, constructed response '+ex.crMarks+' marks, of which Level 3 carries '+ex.l3Marks+' marks.</p>';
+  var key='<h1 style="font-size:1.3rem;">'+title+': Answer Key</h1><p>'+scope+' \u00B7 Total marks: '+ex.total+'</p>';
+  key+='<h2 style="font-size:1.05rem;">Section A answers</h2><p style="font-size:.92rem;">The correct letter for each question, in the same layout as the answer record on the student paper.</p>';
+  key+=recGrid(ex.srItems,true);
+  key+='<h2 style="font-size:1.05rem;">Section B: worked solutions</h2>';
+  var m=ex.srItems.length;
+  ex.crItems.forEach(function(it){m++;var q=it.q;var ans=q.type==="mc"?esc(q.options[q.correct]):(q.type==="num"?fmt(q.answer):esc(q.answers[0]));
+    key+='<div class="solp"><p><b>'+m+'.</b> Answer: <b>'+ans+'</b> ('+it.marks+' marks)</p><div style="line-height:1.5;font-size:.92rem;">'+stepHTML(q.solution)+'</div></div>';});
+  key+='<h2 style="font-size:1.05rem;">Appendix: Section A worked solutions</h2><div class="solAppendix">';
+  ex.srItems.forEach(function(it,ix){var q=it.q;key+='<div class="solp"><p><b>'+(ix+1)+'.</b> <b>('+"ABCD"[q.correct]+')</b></p><div>'+stepHTML(q.solution)+'</div></div>';});
+  key+='</div>';
+  $("printArea").innerHTML=paper;
+  $("session").innerHTML='<div class="card"><p>Your '+(single?"practice unit test":"practice exam")+' is ready: '+ex.srItems.length+' selected-response questions and '+ex.crItems.length+' constructed-response questions, '+ex.total+' marks in total. The exam paper and the answer key print separately.</p>'
+    +(ex.short?'<p class="thinNote">Heads up: the bank could not fill every exam slot for this selection yet, so this paper runs short of the full blueprint.</p>':"")
+    +'<div class="row"><button type="button" id="printPaperBtn">Print the exam paper</button><button type="button" id="printKeyBtn" class="sec">Print the answer key</button></div>'
+    +'<div class="sheetPrev" id="sheetPrev">'+paper+'<div class="keybreak">'+key+'</div></div></div>';
+  typesetMath($("sheetPrev"));typesetMath($("printArea"));
+  $("printPaperBtn").addEventListener("click",function(){$("printArea").innerHTML=paper;typesetMath($("printArea"));window.print();});
+  $("printKeyBtn").addEventListener("click",function(){$("printArea").innerHTML=key;typesetMath($("printArea"));window.print();});
 }
 function settingsToURL(){
   var s=settings();var p=new URLSearchParams();
@@ -6505,6 +6637,8 @@ $("presetFinal").addEventListener("click",function(){setPreset([6,7,8,9],false,[
 $("presetAll").addEventListener("click",function(){setPreset([1,2,3,4,5,6,7,8,9]);});
 $("goOnline").addEventListener("click",startOnline);
 $("goSheet").addEventListener("click",startSheet);
+$("goWorksheet").addEventListener("click",startWorksheet);
+$("goExam").addEventListener("click",startExam);
 $("copyLink").addEventListener("click",function(){
   var url=location.origin+settingsToURL();
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url);}
