@@ -6423,7 +6423,9 @@ var REF_HTML={
 8:"Note: any formula required for logarithmic or exponential functions will be provided per question.",
 9:"<b>Permutations:</b> \\({}_nP_r=\\dfrac{n!}{(n-r)!}\\).<br><b>Permutations with repeated items:</b> \\(\\dfrac{n!}{a!\\,b!\\,c!\\,\\ldots}\\).<br><b>Combinations:</b> \\({}_nC_r=\\dbinom{n}{r}=\\dfrac{n!}{(n-r)!\\,r!}\\).<br><b>Binomial Theorem:</b> \\((x+y)^n={}_nC_0(x)^n(y)^0+{}_nC_1(x)^{n-1}(y)^1+{}_nC_2(x)^{n-2}(y)^2+\\ldots+{}_nC_{n-1}(x)^1(y)^{n-1}+{}_nC_n(x)^0(y)^n\\)."
 };
-function refPanelsHtml(units){var h="";units.forEach(function(u){if(REF_HTML[u])h+='<details class="refpanel"><summary>Formulas and facts for Unit '+u+": "+UNITS[u]+'</summary><div class="refbody">'+REF_HTML[u]+"</div></details>";});return h;}
+/* Quadratic Formula panel: always shown, regardless of unit selection (Jason, November 8, 2026). Formula as printed on the official Math 3200 formula sheet. */
+var REF_QUADRATIC='<details class="refpanel"><summary>Quadratic Formula</summary><div class="refbody">\\(x=\\dfrac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}\\)</div></details>';
+function refPanelsHtml(units){var h=REF_QUADRATIC;units.forEach(function(u){if(REF_HTML[u])h+='<details class="refpanel"><summary>Formulas and facts for Unit '+u+": "+UNITS[u]+'</summary><div class="refbody">'+REF_HTML[u]+"</div></details>";});return h;}
 function stopExamTimer(){try{if(window._examTimerInt){clearInterval(window._examTimerInt);window._examTimerInt=null;}}catch(e){}}
 function refreshFace(){
   var fs=$("faceScope");if(!fs)return;
