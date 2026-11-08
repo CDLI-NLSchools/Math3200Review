@@ -872,6 +872,24 @@ function u1Plot(fn,x0,x1,o){ /* axes-and-curve SVG, y-range fitted from samples 
 }
 
 /* ---------- 3.2: quotient by synthetic division (L1) ---------- */
+function balDp(keyStr,ds){
+  function dpOf(s){var m=/^-?\d+(?:\.(\d+))?$/.exec(s);if(!m)return null;return m[1]?m[1].length:0;}
+  function padTo(s,dp){var cur=dpOf(s);if(cur===null||dp<=cur)return s;if(s.indexOf(".")<0)return s+"."+Array(dp+1).join("0");return s+Array(dp-cur+1).join("0");}
+  var all=[keyStr].concat(ds),dps=all.map(dpOf);
+  if(dps.some(function(d){return d===null;}))return ds;
+  function ok(list){var c={};list.forEach(function(d){c[d]=(c[d]||0)+1;});return Object.keys(c).every(function(k){return c[k]!==1;});}
+  if(ok(dps))return ds;
+  var cap=Math.max.apply(null,dps)+2,best=null,bestCost=1e9;
+  for(var a=dps[1];a<=cap;a++)for(var b=dps[2];b<=cap;b++)for(var c2=dps[3];c2<=cap;c2++){
+    var cand=[dps[0],a,b,c2];
+    if(!ok(cand))continue;
+    var cost=(a-dps[1])+(b-dps[2])+(c2-dps[3]);
+    if(cost<bestCost){bestCost=cost;best=[a,b,c2];}
+  }
+  if(!best)return ds;
+  return ds.map(function(s,i){return padTo(s,best[i]);});
+}
+
 E("u1-divide-quotient",1,["3.2"],1,"gen",function(){
   var att=0, cf, a, sy;
   while(att<200){
@@ -966,9 +984,9 @@ E("u1-synthetic-relation",1,["3.1"],2,"var",varset([
     var cf=[pick([1,2,3]), ri(-8,8), ri(-8,8), ri(-8,8)];
     return mcq("A student uses synthetic division to divide \\(P(x) = "+u1PolyS(cf)+"\\) by \\("+u1FacS(a)+"\\). Which statement about the process is <b>correct</b>?",
       "The other numbers in the bottom row are the coefficients of the quotient, and the last number is the remainder.",
-      ["The numbers in the bottom row are the zeros of the function.",
-       "Synthetic division gives the same result as long division for any divisor, including quadratic divisors.",
-       "The value placed at the left of the tableau is \\("+(-a)+"\\)."],
+      ["The numbers in the bottom row are the zeros of the polynomial function being divided by the given divisor.",
+       "Synthetic division gives the same result as long division for any divisor, including divisors that are quadratic.",
+       "The value placed at the left of the tableau is always the value of \\("+(-a)+"\\) itself, not \\(" + a + "\\)."],
       "Synthetic division is a shortcut for long division by a divisor of the form \\((x - a)\\): the value used is \\("+a+"\\) itself. Each bottom-row entry, except the last, is a coefficient of the quotient, and the last entry is the remainder, exactly as long division would give.",
       {a:a});
   },
@@ -982,9 +1000,9 @@ E("u1-synthetic-relation",1,["3.1"],2,"var",varset([
   function(){
     return mcq("Long division and synthetic division of a polynomial by \\((x - a)\\) produce the same quotient and remainder. Why can synthetic division be written so much more briefly?",
       "It works only with the coefficients, so the variables are omitted and each step is just a multiplication and an addition.",
-      ["It skips the remainder, which long division calculates separately.",
-       "It is only an approximation, used when an exact answer is not needed.",
-       "It first rewrites the divisor as \\((x + a)\\), which shortens the calculation."],
+      ["It skips the remainder entirely, which long division calculates separately at the end of the process.",
+       "It is only an approximation, used when an exact answer is not needed, so it is quicker but less reliable in its results overall.",
+       "It first rewrites the divisor as \\((x + a)\\) before starting the division itself, which shortens the calculation."],
       "In long division, the variables line up in the same pattern every step, so they carry no new information. Synthetic division drops them, records only the coefficients, and replaces each divide-and-subtract step with a multiply-and-add step. Nothing is skipped or approximated: the quotient and remainder are identical.",
       {});
   },
@@ -1781,17 +1799,17 @@ E("u2-refl-yx",2,["4.46","4.47"],3,"var",varset([
     {v:1});},
   function(){return mcq("The graph of a function \\(f\\) is reflected in the line \\(y = x\\). The image graph passes the vertical line test. What must be true?",
     "The inverse of \\(f\\) is a function",
-    ["\\(f\\) is not one-to-one","\\(f\\) fails the horizontal line test","The image is the graph of the reciprocal of \\(f\\)"],
+    ["\\(f\\) is not one-to-one at all","\\(f\\) fails the horizontal line test","The image is the graph of the reciprocal of \\(f\\)"],
     "The reflection in the line \\(y = x\\) is the inverse relation of \\(f\\), and it passes the vertical line test, so the inverse is a function. That happens exactly when \\(f\\) is one-to-one, equivalently when \\(f\\) passes the horizontal line test. A reflection in \\(y = x\\) has nothing to do with the reciprocal \\(\\frac{1}{f(x)}\\).",
     {v:2});},
   function(){return mcq("A function \\(f\\) is one-to-one. Its graph is reflected in the line \\(y = x\\). Which statement about the image graph is true?",
     "The image is the graph of the inverse of \\(f\\)",
-    ["The image is not a function","The image is the reflection of \\(f\\) in the \\(x\\)-axis","The image is the graph of the reciprocal of \\(f\\)"],
+    ["The image is not a function at all","The image is the reflection of \\(f\\) in the \\(x\\)-axis","The image is the graph of the reciprocal of \\(f\\)"],
     "Reflecting any graph in the line \\(y = x\\) swaps the coordinates of every point, which produces the inverse relation. Because \\(f\\) is one-to-one, no two of its points share a \\(y\\)-value, so the swapped points never share an \\(x\\)-coordinate: the image passes the vertical line test and is the graph of the inverse function.",
     {v:3});},
   function(){return mcq("A relation \\(R\\) contains the points \\((1, 4)\\) and \\((3, 4)\\). The graph of \\(R\\) is reflected in the line \\(y = x\\). Why is the image not a function?",
     "The image contains \\((4, 1)\\) and \\((4, 3)\\), two points with the same \\(x\\)-coordinate",
-    ["The image contains \\((1, 4)\\) and \\((3, 4)\\), unchanged from \\(R\\)","Every reflection in the line \\(y = x\\) fails the vertical line test","The relation \\(R\\) is not a function"],
+    ["The image contains \\((1, 4)\\) and \\((3, 4)\\), unchanged from \\(R\\) after the reflection","Every reflection in the line \\(y = x\\) produces an image that fails the vertical line test","The relation \\(R\\) is not a function to begin with, before any reflection"],
     "Reflection in the line \\(y = x\\) swaps coordinates, so \\((1, 4)\\) maps to \\((4, 1)\\) and \\((3, 4)\\) maps to \\((4, 3)\\). The image pairs the input \\(4\\) with two different outputs, so it fails the vertical line test. Note that \\(R\\) itself is a function: its two points have different \\(x\\)-coordinates.",
     {v:4});}
 ]));
@@ -1981,7 +1999,7 @@ E("u3-two-methods",3,["4.26"],3,"gen",function(){
     "Both methods give \\(x = "+s+"\\), because the intersection x-coordinate and the x-intercept both occur where \\("+rad+" = "+c+"\\)",
     ["Only "+pair[0]+"'s method works, because the solution of an equation is the x-coordinate where two graphs intersect",
      "Only "+pair[1]+"'s method works, because the solution of an equation has to be read from the x-intercept of a single graph",
-     "Neither method works, because a solution read from a graph is only an estimate and cannot be checked"],
+     "Neither method works, because a solution read from a graph is only an estimate and cannot be checked against the equation"],
     pair[1]+"'s graph crosses the x-axis where \\("+rad+" - "+c+" = 0\\), which is the very same condition as \\("+rad+" = "+c+"\\). That x-value is also where "+pair[0]+"'s two graphs meet, since both graphs then have the same y-value. So both methods find \\(x = "+(c*c)+" - "+a+" = "+s+"\\), and substituting back confirms it exactly.",
     {a:a,c:c});
 });
@@ -2192,7 +2210,7 @@ E("u4-one-radian", 4, ["7.2", "7.3"], 1, "var", varset([
   },
   function () {
     return mcq("\\(\\pi\\) radians is equal to",
-      "180°", ["360°", "90°", "57.3°"],
+      "180°", ["360°", "90.0°", "57.3°"],
       "Half a rotation is \\(\\pi\\) rad and also \\(180^\\circ\\), so \\(\\pi\\) rad \\(= 180^\\circ\\). The value 57.3° is the size of 1 radian, not of \\(\\pi\\) radians.",
       { v: 3 });
   },
@@ -2338,7 +2356,7 @@ E("u4-circle-equation", 4, ["7.10", "7.11"], 2, "gen", function () {
   if (mode === "fromEq") {
     var k = pick([9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196]), rk = Math.sqrt(k);
     return mcq("What is the radius of the circle \\(x^2 + y^2 = " + k + "\\)?",
-      "" + rk, u4dist3("" + rk, ["" + k, "" + fmt(k / 2), "" + (2 * rk), "" + (rk + 1), "" + (3 * rk)]),
+      "" + rk, u4dist3("" + rk, ["" + k, (k % 2 === 1 ? "\\(\\frac{" + k + "}{2}\\)" : "" + (k / 2)), "" + (2 * rk), "" + (rk + 1), "" + (3 * rk)]),
       "Comparing with \\(x^2 + y^2 = r^2\\) gives \\(r^2 = " + k + "\\), so \\(r = \\sqrt{" + k + "} = " + rk + "\\). The radius is <b>" + rk + "</b>.",
       { mode: "fromEq", k: k });
   }
@@ -2672,14 +2690,14 @@ E("u4-error-analysis", 4, ["7.37"], 3, "var", varset([
       "The solution \\(\\theta = \\frac{5\\pi}{6}\\) in Quadrant II was missed",
       ["The reference angle for \\(\\sin\\theta = \\frac{1}{2}\\) is \\(\\frac{\\pi}{3}\\), not \\(\\frac{\\pi}{6}\\)",
         "\\(\\theta = \\frac{\\pi}{6}\\) does not satisfy the equation",
-        "The solutions should have been given in degrees, not radians"],
+        "The solutions should have been given in degrees rather than radians"],
       "Sine is positive in Quadrants I and II, so there are two solutions in the interval: \\(\\theta = \\frac{\\pi}{6}\\) and \\(\\theta = \\pi - \\frac{\\pi}{6} = \\frac{5\\pi}{6}\\). The error is the missed Quadrant II solution.",
       { v: 1 });
   },
   function () {
     return mcq("A student converts 150° to radians as shown: \\(150 \\times \\frac{180}{\\pi} \\approx 8594\\) rad. What is the error in this conversion?",
       "The conversion factor was inverted; degrees must be multiplied by \\(\\frac{\\pi}{180}\\)",
-      ["The student should have divided 150 by 360 before converting",
+      ["The student should have divided 150 by 360 before converting to radians",
         "A radian measure can never exceed \\(2\\pi\\), so a full rotation should be subtracted first",
         "The value 150 should have been replaced by its reference angle, 30"],
       "To convert degrees to radians, multiply by \\(\\frac{\\pi}{180}\\), not by its reciprocal: \\[ \\begin{aligned} 150^\\circ &= 150 \\times \\frac{\\pi}{180} \\\\ &= \\frac{5\\pi}{6} \\\\ &\\approx 2.62 \\text{ rad} \\end{aligned} \\] The error is the inverted conversion factor.",
@@ -2688,8 +2706,8 @@ E("u4-error-analysis", 4, ["7.37"], 3, "var", varset([
   function () {
     return mcq("A student solves \\(\\cos\\theta = -\\frac{\\sqrt{3}}{2}\\) for \\(0^\\circ \\le \\theta < 360^\\circ\\) and gives \\(\\theta = 150^\\circ\\) and \\(\\theta = 330^\\circ\\). Which statement about this solution is <b>NOT</b> correct?",
       "\\(330^\\circ\\) is a solution, because cosine is negative in Quadrant IV",
-      ["\\(150^\\circ\\) is a correct solution",
-        "The reference angle is \\(30^\\circ\\)",
+      ["The value \\(\\theta = 150^\\circ\\) is a correct solution of the equation",
+        "The reference angle for the equation is \\(30^\\circ\\), as the student used",
         "\\(210^\\circ\\) is also a solution, because cosine is negative in Quadrant III"],
       "Cosine is negative in Quadrants II and III only, so the solutions are \\(150^\\circ\\) and \\(210^\\circ\\). At \\(330^\\circ\\), in Quadrant IV, cosine is positive: \\(\\cos 330^\\circ = \\frac{\\sqrt{3}}{2}\\). The statement claiming \\(330^\\circ\\) is a solution with a negative cosine in Quadrant IV is the one that is NOT correct.",
       { v: 3 });
@@ -2697,9 +2715,9 @@ E("u4-error-analysis", 4, ["7.37"], 3, "var", varset([
   function () {
     return mcq("The point P(-3, 4) lies on the terminal arm of an angle \\(\\theta\\) in standard position. A student writes \\(\\sin\\theta = \\frac{4}{3}\\). What is the error in this value?",
       "The student divided by the x-coordinate instead of by r; since \\(r = 5\\), \\(\\sin\\theta = \\frac{4}{5}\\)",
-      ["The sine value must be negative because the point is in Quadrant II",
-        "The student should have found \\(\\tan\\theta\\) first and worked from it",
-        "There is no error; \\(\\sin\\theta = \\frac{4}{3}\\)"],
+      ["The sine value must be negative because the point is in Quadrant II, so the value should not be positive",
+        "The student should have found \\(\\tan\\theta\\) first and worked from it to get the sine value",
+        "There is no error in the work shown; \\(\\sin\\theta = \\frac{4}{3}\\) is the correct value for this point"],
       "The distance from the origin is \\[ \\begin{aligned} r &= \\sqrt{(-3)^2 + 4^2} \\\\ &= \\sqrt{25} \\\\ &= 5 \\end{aligned} \\] so \\(\\sin\\theta = \\frac{y}{r} = \\frac{4}{5}\\). The student divided by 3, the size of the x-coordinate, in place of r. A sine value greater than 1 is also impossible.",
       { v: 4 });
   }
@@ -2732,18 +2750,18 @@ E("u4-arc-compare", 4, ["7.9", "7.3"], 3, "gen", function () {
     var thA = ri(7, 26) / 10, degB = ri(35, 160), radB = degB * Math.PI / 180;
     while (Math.abs(thA - radB) < 0.12) { degB = ri(35, 160); radB = degB * Math.PI / 180; }
     var winA = thA > radB;
-    var corr = winA ? "Angle A cuts the longer arc" : "Angle B cuts the longer arc";
+    var corr = winA ? "Angle A cuts the longer arc on the circle" : "Angle B cuts the longer arc on the circle";
     return mcq("Two angles in standard position cut arcs on the same circle. Angle A measures " + fmt(thA, 1) + " rad and angle B measures " + degB + "°. Which angle cuts the longer arc?",
-      corr, ["Angle A cuts the longer arc", "Angle B cuts the longer arc", "The two arcs are the same length", "The lengths cannot be compared without knowing the radius"].filter(function (s) { return s !== corr; }),
+      corr, ["Angle A cuts the longer arc on the circle", "Angle B cuts the longer arc on the circle", "The two arcs are exactly the same length", "The lengths cannot be compared without knowing the radius"].filter(function (s) { return s !== corr; }),
       "On the same circle the radius is shared, so the larger angle cuts the longer arc. Convert B to radians: \\[ \\begin{aligned} " + degB + "^\\circ &= " + degB + " \\times \\frac{\\pi}{180} \\\\ &\\approx " + fmt(radB) + " \\text{ rad} \\end{aligned} \\] Angle A measures " + fmt(thA, 1) + " rad, so <b>" + corr.toLowerCase() + "</b>.",
       { mode: "same", thA: thA, degB: degB });
   }
   var r1 = ri(5, 15), t1 = ri(7, 26) / 10, r2 = ri(5, 15), t2 = ri(7, 26) / 10;
   while (Math.abs(r1 * t1 - r2 * t2) < 0.8) { t2 = ri(7, 26) / 10; r2 = ri(5, 15); }
   var a1 = r1 * t1, a2 = r2 * t2, win1 = a1 > a2;
-  var corr2 = win1 ? "The arc on circle 1 is longer" : "The arc on circle 2 is longer";
+  var corr2 = win1 ? "The arc cut on circle 1 is the longer one" : "The arc cut on circle 2 is the longer one";
   return mcq("On circle 1, with radius " + r1 + " cm, a central angle of " + fmt(t1, 1) + " rad cuts an arc. On circle 2, with radius " + r2 + " cm, a central angle of " + fmt(t2, 1) + " rad cuts an arc. Which arc is longer?",
-    corr2, ["The arc on circle 1 is longer", "The arc on circle 2 is longer", "The two arcs are the same length", "The lengths cannot be compared because the radii are different"].filter(function (s) { return s !== corr2; }),
+    corr2, ["The arc cut on circle 1 is the longer one", "The arc cut on circle 2 is the longer one", "The two arcs are exactly the same length", "The lengths cannot be compared because the radii are different"].filter(function (s) { return s !== corr2; }),
     "Compute both arcs with \\(a = r\\theta\\): \\[ \\begin{aligned} a_1 &= " + r1 + " \\times " + fmt(t1, 1) + " = " + fmt(a1, 1) + " \\text{ cm} \\\\ a_2 &= " + r2 + " \\times " + fmt(t2, 1) + " = " + fmt(a2, 1) + " \\text{ cm} \\end{aligned} \\] <b>" + corr2 + "</b>.",
     { mode: "diff", r1: r1, t1: t1, r2: r2, t2: t2 });
 });
@@ -3457,10 +3475,10 @@ E("u6-identity-or-equation", 6, ["7.39"], 1, "gen", function () {
       "\\cos " + v + " = -2"
     ]);
   }
-  var stId = "It is an identity: it holds for every permissible value of \\(" + v + "\\)";
-  var stEq = "It is an equation: it holds only for particular values of \\(" + v + "\\)";
-  var stNever = "It is an equation with no solution: no value of \\(" + v + "\\) makes it true";
-  var stQuad = "Its truth depends only on which quadrant \\(" + v + "\\) is in";
+  var stId = "It is an identity: it holds for every permissible value of \\(" + v + "\\) at all";
+  var stEq = "It is an equation: it holds only for particular values of \\(" + v + "\\) alone";
+  var stNever = "It is an equation with no solution: no value of \\(" + v + "\\) can make it true.";
+  var stQuad = "Its truth depends only on which quadrant \\(" + v + "\\) happens to be in";
   var key = cat === "id" ? stId : cat === "eq" ? stEq : stNever;
   var dis = [stId, stEq, stNever, stQuad].filter(function (s) { return s !== key; });
   var expl = cat === "id"
@@ -3858,7 +3876,7 @@ E("u6-graphical-validity", 6, ["7.40"], 2, "gen", function () {
   if (T.cat === "holes") { key = kId; dis = ["The relation is not an identity, because the gaps mean the two sides are not equivalent", "The relation is an equation: it holds only at the points where the graphs have gaps", "Graphs can never give evidence about whether a relation is an identity"]; }
   else if (T.cat === "full") { key = kId; dis = ["The relation is not an identity: the graphs agree only at isolated points", "The relation is an equation with exactly two solutions on the interval", "Graphs can never give evidence about whether a relation is an identity"]; }
   else if (T.cat === "cross") { key = kNot; dis = ["The relation is an identity: the graphs cross, so the two sides are equal", kId, "Graphs can never give evidence about whether a relation is an identity"]; }
-  else { key = kNever; dis = [kId, "The relation is an equation with exactly one solution on the interval", "Graphs can never give evidence about whether a relation is an identity"]; }
+  else { key = kNever; dis = [kId, "The relation is an equation with one solution on the interval", "Graphs can never give evidence about an identity"]; }
   return mcq("A student graphs \\(y = " + rel.split(" = ")[0] + "\\) and \\(y = " + rel.split(" = ")[1] + "\\) on " + (rad ? "\\([0, 2\\pi)\\)" : "\\([0^\\circ, 360^\\circ)\\)") + ". " + desc + " What is the correct conclusion?",
     key, dis,
     (T.cat === "holes" || T.cat === "full")
@@ -3927,9 +3945,9 @@ E("u6-proof-next-step", 6, ["7.43"], 2, "gen", function () {
     id = flip ? rhs + " = " + lhs : lhs + " = " + rhs;
     var conj = flip ? denA : numB;
     key = "Multiply the numerator and denominator of the left side by \\(" + conj + "\\)";
-    dis = ["Square both sides of the identity",
-      "Replace \\(" + f2 + "^2\\) with \\(1 + " + f1 + "^2\\)",
-      "Cancel the \\(" + f1 + "\\) terms from the two sides of the identity"];
+    dis = ["Square both sides of the identity as the first step",
+      "Replace \\(" + f2 + "^2\\) with \\(1 + " + f1 + "^2\\) on the left side of the identity",
+      "Cancel the \\(" + f1 + "\\) terms from the two sides of the identity at the start"];
     sol = "Multiplying by the conjugate produces the factor \\(1 - " + f2 + "^2 = " + f1 + "^2\\), and a factor of \\(" + f1 + "\\) cancels, leaving the other side. The valid first step is: <b>" + key + "</b>.";
   } else if (fam === "combine") {
     var cscMode = Math.random() < 0.5, A = Math.random() < 0.5 ? v : "2" + v;
@@ -3938,8 +3956,8 @@ E("u6-proof-next-step", 6, ["7.43"], 2, "gen", function () {
     id = big + " - " + small + " = " + third;
     key = "Rewrite the left side over a common denominator as \\(\\frac{1 - " + small + "^2}{" + small + "}\\)";
     dis = ["Replace \\(" + small + "^2\\) with \\(1 + " + (cscMode ? "\\cos " + A : "\\sin " + A) + "^2\\) in the first term",
-      "Square both sides of the identity",
-      "Cancel the \\(" + small + "\\) inside \\(" + big + "\\) with the \\(" + small + "\\) term beside it"];
+      "Square both sides of the identity as the first step",
+      "Cancel the \\(" + small + "\\) inside \\(" + big + "\\) with the \\(" + small + "\\) term beside it at the start"];
     sol = "Writing the reciprocal ratio in terms of \\(" + small + "\\) and combining over a common denominator gives \\(\\frac{1 - " + small + "^2}{" + small + "}\\), where the Pythagorean identity can now be applied. The valid first step is: <b>" + key + "</b>.";
   } else if (fam === "dblfrac") {
     var form = pick(["a", "b", "c", "d"]);
@@ -3948,15 +3966,15 @@ E("u6-proof-next-step", 6, ["7.43"], 2, "gen", function () {
     else if (form === "b") { id = "\\frac{1 - " + c2 + "}{" + s2 + "} = \\tan " + v; key = "Replace \\(1 - " + c2 + "\\) with \\(2\\sin^2 " + v + "\\) and \\(" + s2 + "\\) with \\(2\\sin " + v + " \\cos " + v + "\\)"; }
     else if (form === "c") { id = "\\frac{" + s2 + "}{1 - " + c2 + "} = \\cot " + v; key = "Replace \\(" + s2 + "\\) with \\(2\\sin " + v + " \\cos " + v + "\\) and \\(" + c2 + "\\) with \\(1 - 2\\sin^2 " + v + "\\)"; }
     else { id = "\\frac{1 + " + c2 + "}{" + s2 + "} = \\cot " + v; key = "Replace \\(1 + " + c2 + "\\) with \\(2\\cos^2 " + v + "\\) and \\(" + s2 + "\\) with \\(2\\sin " + v + " \\cos " + v + "\\)"; }
-    dis = ["Replace \\(\\sin 2" + v + "\\) with \\(2\\sin " + v + "\\)",
-      "Replace \\(\\cos 2" + v + "\\) with \\(\\cos^2 " + v + " + \\sin^2 " + v + "\\)",
-      "Square both sides of the identity"];
+    dis = ["Replace \\(\\sin 2" + v + "\\) with \\(2\\sin " + v + "\\) in the numerator",
+      "Replace \\(\\cos 2" + v + "\\) with \\(\\cos^2 " + v + " + \\sin^2 " + v + "\\) in the denominator of the left side",
+      "Square both sides of the identity as the first step"];
     sol = "The double-angle identities rewrite the numerator and denominator with matching factors of \\(\\sin " + v + "\\) and \\(\\cos " + v + "\\), which then cancel toward the right side. The valid first step is: <b>" + key + "</b>.";
   } else if (fam === "expand") {
     var minus = Math.random() < 0.5;
     id = "(\\sin " + v + (minus ? " - " : " + ") + "\\cos " + v + ")^2 = 1 " + (minus ? "-" : "+") + " \\sin 2" + v;
     key = "Expand the left side to \\(\\sin^2 " + v + (minus ? " - " : " + ") + "2\\sin " + v + " \\cos " + v + " + \\cos^2 " + v + "\\)";
-    dis = ["Expand the left side to \\(\\sin^2 " + v + " + \\cos^2 " + v + "\\)",
+    dis = ["Expand the left side to \\(\\sin^2 " + v + " + \\cos^2 " + v + "\\) as the first step",
       "Replace \\(\\sin 2" + v + "\\) with \\(2\\sin " + v + "\\)",
       "Replace \\(\\sin^2 " + v + "\\) with \\(1 + \\cos^2 " + v + "\\)"];
     sol = "Expanding the square produces the cross term \\(2\\sin " + v + " \\cos " + v + "\\), which pairs with \\(\\sin^2 " + v + " + \\cos^2 " + v + " = 1\\) to give the right side. The valid first step is: <b>" + key + "</b>.";
@@ -3967,17 +3985,17 @@ E("u6-proof-next-step", 6, ["7.43"], 2, "gen", function () {
     var sumF = swap ? "\\cos^2 " + v + " + \\sin^2 " + v : "\\sin^2 " + v + " + \\cos^2 " + v;
     id = "\\frac{" + hi + "}{" + lo + "} = 1";
     key = "Factor the numerator as a difference of squares: \\((" + lo + ")(" + sumF + ")\\)";
-    dis = ["Replace the numerator with \\((" + lo + ")^2\\)",
-      "Square both sides of the identity",
-      "Replace \\(" + sumF + "\\) with \\(\\sin " + v + " + \\cos " + v + "\\)"];
+    dis = ["Replace the numerator with \\((" + lo + ")^2\\) and leave the denominator of the fraction",
+      "Square both sides of the identity as the first step",
+      "Replace \\(" + sumF + "\\) with \\(\\sin " + v + " + \\cos " + v + "\\) in the numerator of the given fraction"];
     sol = "The numerator is a difference of squares, \\((" + lo + ")(" + sumF + ")\\); cancelling the first factor and using \\(" + sumF + " = 1\\) completes the proof. The valid first step is: <b>" + key + "</b>.";
   } else if (fam === "tanconv") {
     var sinMode = Math.random() < 0.5;
     id = sinMode ? "\\frac{2\\tan " + v + "}{1 + \\tan^2 " + v + "} = \\sin 2" + v : "\\frac{1 - \\tan^2 " + v + "}{1 + \\tan^2 " + v + "} = \\cos 2" + v;
     key = "Multiply the numerator and denominator by \\(\\cos^2 " + v + "\\)";
-    dis = ["Replace \\(\\tan^2 " + v + "\\) with \\(\\frac{\\cos^2 " + v + "}{\\sin^2 " + v + "}\\)",
-      "Replace \\(1 + \\tan^2 " + v + "\\) with \\(\\sec " + v + "\\)",
-      "Square both sides of the identity"];
+    dis = ["Replace \\(\\tan^2 " + v + "\\) with \\(\\frac{\\cos^2 " + v + "}{\\sin^2 " + v + "}\\) in both places",
+      "Replace \\(1 + \\tan^2 " + v + "\\) with \\(\\sec " + v + "\\) in the denominator",
+      "Square both sides of the identity as the first step"];
     sol = "Multiplying through by \\(\\cos^2 " + v + "\\) clears the fractions inside the numerator and denominator, producing a double-angle form. The valid first step is: <b>" + key + "</b>.";
   } else {
     var fnA = pick(["sin", "cos"]), fnB = fnA === "sin" ? "cos" : "sin";
@@ -3986,8 +4004,8 @@ E("u6-proof-next-step", 6, ["7.43"], 2, "gen", function () {
     id = "\\frac{" + fa + "^2}{1 " + (sg > 0 ? "+" : "-") + " " + fb + "} = 1 " + (sg > 0 ? "-" : "+") + " " + fb;
     key = "Replace \\(" + fa + "^2\\) with \\(1 - " + fb + "^2\\) and factor the numerator";
     dis = ["Replace \\(" + fa + "^2\\) with \\(1 + " + fb + "^2\\) and factor the numerator",
-      "Replace \\(1 - " + fb + "^2\\) with \\(" + fa + "\\) after substituting",
-      "Square both sides of the identity"];
+      "Replace \\(1 - " + fb + "^2\\) with \\(" + fa + "\\) after substituting for the numerator",
+      "Square both sides of the identity as the first step"];
     sol = "The Pythagorean identity turns the numerator into \\((1 - " + fb + ")(1 + " + fb + ")\\), and the matching factor cancels with the denominator. The valid first step is: <b>" + key + "</b>.";
   }
   return mcq("Which is a valid first step in proving the identity \\(" + id + "\\)?",
@@ -4209,9 +4227,9 @@ E("u6-error-analysis", 6, ["7.37"], 3, "gen", function () {
     var key = "Dividing by \\(\\" + base + " " + v + "\\) discards the solutions of \\(\\" + base + " " + v + " = 0\\): " + u6setStr(missing, rad) + " are also solutions";
     return mcq("A student solves \\(" + eqn + "\\) for " + dom + ". The student divides both sides by \\(\\" + base + " " + v + "\\) and reports the solutions " + u6setStr(student, rad) + ". What is the error in this solution?",
       key,
-      ["The reported values do not satisfy the equation",
-        "The student should have divided by \\(\\" + other + " " + v + "\\) instead",
-        "There is no error in the solution"],
+      ["The reported values do not satisfy the equation when they are substituted back into it",
+        "The student should have divided both sides by \\(\\" + other + " " + v + "\\) instead of by \\(\\" + base + " " + v + "\\)",
+        "There is no error in the solution, and the reported values are the complete solution set"],
       "A product equals zero when either factor is zero, so \\(\\" + base + " " + v + " = 0\\) contributes its own solutions. Dividing by that factor throws them away. The complete solution set is " + u6setStr(full, rad) + ". The error is: <b>" + key + "</b>.",
       { fam: fam, full: full });
   }
@@ -4226,9 +4244,9 @@ E("u6-error-analysis", 6, ["7.37"], 3, "gen", function () {
     var key2 = "Cancelling \\(\\tan " + v + "\\) discards the solutions of \\(\\tan " + v + " = 0\\): " + u6setStr(missing2, rad) + " are also solutions";
     return mcq("A student solves \\(" + eqn2 + "\\) for " + dom + ". The student cancels \\(\\tan " + v + "\\) from both sides and reports the solutions " + u6setStr(student2, rad) + ". What is the error in this solution?",
       key2,
-      ["The reported values do not satisfy the equation",
-        "The student should have squared both sides first",
-        "There is no error in the solution"],
+      ["The reported values do not satisfy the equation when substituted back into it",
+        "The student should have squared both sides first and then solved for the angle",
+        "There is no error in the solution, and the reported values are complete"],
       "The equation factors as \\(\\tan " + v + "(\\tan " + v + (kv[0] < 0 ? " + " + kv[1].slice(1) : " - " + kv[1]) + ") = 0\\), so \\(\\tan " + v + " = 0\\) contributes solutions as well. The complete solution set is " + u6setStr(full2, rad) + ". The error is: <b>" + key2 + "</b>.",
       { fam: fam, full: full2 });
   }
@@ -4240,9 +4258,9 @@ E("u6-error-analysis", 6, ["7.37"], 3, "gen", function () {
     var key3 = "The reciprocal step is wrong: \\(" + eqn3 + "\\) gives \\(\\" + prim + " " + v + " = " + u6fr(1, val) + "\\), which does have solutions: " + u6setStr(full3, rad);
     return mcq("A student solves \\(" + eqn3 + "\\) for " + dom + " by rewriting it as \\(\\" + prim + " " + v + " = " + val + "\\) and concluding that there is no solution. What is the error?",
       key3,
-      ["The student is right: the equation has no solution",
-        "The error is that \\(\\" + kind + " " + v + "\\) should have been replaced with its co-function first",
-        "The student should have squared both sides before taking the reciprocal"],
+      ["The student is right: the equation has no solution anywhere in the domain",
+        "The error is that \\(\\" + kind + " " + v + "\\) should have been replaced with its co-function before anything else was done",
+        "The student should have squared both sides before taking the reciprocal of the ratio"],
       "A reciprocal ratio flips the value as well as the ratio: \\(\\" + kind + " " + v + " = " + val + "\\) means \\(\\" + prim + " " + v + " = " + u6fr(1, val) + "\\). The error is: <b>" + key3 + "</b>.",
       { fam: fam, full: full3 });
   }
@@ -4254,9 +4272,9 @@ E("u6-error-analysis", 6, ["7.37"], 3, "gen", function () {
     var key4 = "The ratio name cannot be cancelled like a common factor: \\(\\" + kind2 + " 2" + v + "\\) must be expanded with a double-angle identity, and doing so gives the additional solutions " + u6setStr(missing4, rad);
     return mcq("A student solves \\(" + eqn4 + "\\) for " + dom + " by cancelling the ratio name from both sides, leaving \\(2" + v + " = " + v + "\\), and reports only " + u6setStr([0], rad) + ". What is the error in this solution?",
       key4,
-      ["The reported value does not satisfy the equation",
-        "The student should have cancelled the 2 instead of the ratio name",
-        "There is no error in the solution"],
+      ["The reported value does not satisfy the equation when it is substituted back into it, and neither do the values found from it",
+        "The student should have cancelled the 2 instead of the ratio name, since the 2 is a factor and the name is not, and then solved \\(2" + v + " = " + v + "\\) directly for the angle in the domain",
+        "There is no error in the solution, and the reported values are the complete solution set, exactly as reported"],
       "The symbol \\(\\" + kind2 + "\\) is a function name, not a factor: \\(\\" + kind2 + " 2" + v + "\\) is a single quantity. Expanding it with the double-angle identity and factoring gives the complete solution set " + u6setStr(full4, rad) + ". The error is: <b>" + key4 + "</b>.",
       { fam: fam, full: full4 });
   }
@@ -4267,9 +4285,9 @@ E("u6-error-analysis", 6, ["7.37"], 3, "gen", function () {
   var key5 = "Tangent repeats every " + (rad ? "\\(\\pi\\)" : "180°") + ", so there is a second solution in the domain: " + u6setStr(missing5, rad) + " was missed";
   return mcq("A student solves \\(" + eqn5 + "\\) for " + dom + " and reports only " + u6setStr(student5, rad) + ". What is the error in this solution?",
     key5,
-    ["The reported value does not satisfy the equation",
-      "The reference angle was computed incorrectly",
-      "There is no error in the solution"],
+    ["The reported value does not satisfy the equation when it is substituted back into it",
+      "The reference angle was computed incorrectly, so every solution built from it is wrong",
+      "There is no error in the solution, and the reported values are the complete solution set"],
     "Within " + (rad ? "\\([0, 2\\pi)\\)" : "\\([0^\\circ, 360^\\circ)\\)") + " the tangent function takes each value twice, once per half-turn. The complete solution set is " + u6setStr(full5, rad) + ". The error is: <b>" + key5 + "</b>.",
     { fam: fam, full: full5 });
 });
@@ -4344,9 +4362,9 @@ E("u6-why-insufficient", 6, ["7.46"], 3, "gen", function () {
   var key = "Agreement at one value shows only that the value satisfies the relation; an identity must hold for every permissible value, and the two sides differ at " + atC;
   return mcq("A student substitutes " + atT + " into both sides of the relation \\(" + rel + "\\) and finds the two sides equal. The student concludes that the relation is an identity. Which statement best explains why the conclusion is not justified?",
     key,
-    ["The argument fails because " + atT + " is a non-permissible value for the relation",
-      "Numerical checks can never provide any useful evidence about whether a relation is an identity",
-      "The substitution must be wrong: at " + atT + " the two sides are not actually equal"],
+    ["The argument fails because " + atT + " is a non-permissible value for the relation, so the check says nothing about the relation or any of its values at all",
+      "Numerical checks can never provide any useful evidence about whether a relation is an identity, no matter how many values are tested, or how the values are chosen",
+      "The substitution must be wrong: at " + atT + " the two sides are not actually equal, so the student's arithmetic should be checked again from the start"],
     "A numerical check can support a claim or refute it, but equality at one value, or even at several values, never proves equality at every permissible value; that requires a proof. Here the sides differ at " + atC + ", so the relation is not an identity at all. The statement that fits is: <b>" + key + "</b>.",
     { tested: tested, counter: counter });
 });
@@ -4748,7 +4766,7 @@ E("u7-identify-growth-decay",7,["4.48"],1,"gen",function(){
     if(b2===a2)b2=3;
     var dis2=u7pick3(""+a2,[""+b2,"1",fmt(a2*b2,3),""+(a2+1)]);
     return mcq("What is the <b>y-intercept</b> of the graph of \\(y = "+a2+" ("+fmt(b2,3)+")^{x}\\)?",
-      ""+a2,dis2,
+      ""+a2,balDp(""+a2,dis2),
       "The y-intercept occurs at \\(x = 0\\). Since \\(("+fmt(b2,3)+")^{0} = 1\\), the value is \\("+a2+" \\times 1 = "+a2+"\\). The y-intercept is <b>"+a2+"</b>.",{ask:ask});
   }
   if(ask==="domain"){
@@ -4756,7 +4774,7 @@ E("u7-identify-growth-decay",7,["4.48"],1,"gen",function(){
     var b3s=typeof b3==="string"?"\\left("+b3+"\\right)":""+b3;
     return mcq("What is the <b>domain</b> of the function \\(y = "+b3s+"^{x}\\)?",
       "the set of all real numbers",
-      ["\\(\\{x \\mid x > 0\\}\\)","\\(\\{x \\mid x \\ge 0\\}\\)","\\(\\{x \\mid x \\ne 0\\}\\)"],
+      ["\\(\\{x \\mid x > 0\\}\\)","\\(\\{x \\mid x \\ge 0\\}\\)","every real number except zero itself"],
       "An exponential function is defined for every real exponent: positive, negative and zero inputs all give a value. The domain is <b>the set of all real numbers</b>. It is the range, not the domain, that is restricted.",{ask:ask});
   }
   var a4=pick([2,3,4,5]),b4=pick([2,3,5,"\\frac{1}{3}"]);
@@ -4779,7 +4797,7 @@ E("u7-sketch-key-points",7,["4.35"],1,"gen",function(){
   var q;
   if(ask==="yint"){
     var dis=u7pick3(""+a,["0",fmt(cv,3),"1","-1",fmt(a*cv,3)]);
-    q=mcq("The graph of "+eqStr+" is shown. What is its <b>y-intercept</b>?",""+a,dis,
+    q=mcq("The graph of "+eqStr+" is shown. What is its <b>y-intercept</b>?",""+a,balDp(""+a,dis),
       "The graph crosses the y-axis at the marked point \\((0, "+a+")\\), and substituting \\(x = 0\\) gives \\(y = "+(a===1?"":a)+" \\times 1 = "+a+"\\). The y-intercept is <b>"+a+"</b>.",{ask:ask,a:a,c:c});
   }else if(ask==="pt1"){
     var v1=u7rat(a*c[0],c[1]),v1i=u7rat(a*c[1],c[0]);
@@ -4885,9 +4903,9 @@ E("u7-characteristics",7,["4.48"],2,"gen",function(){
     var eq2="\\(y = "+u7expStr(1,c2,"x",k2)+"\\)";
     var asy=k2===0?"y = 0":"y = "+k2;
     var corr2="The graph gets closer and closer to the line \\("+asy+"\\) but never touches or crosses it.";
-    var dis2=["The graph crosses the line \\("+asy+"\\) when \\(x\\) is very large.",
-              "The graph stops at the line \\("+asy+"\\) and does not continue past it.",
-              "The line \\(x = "+k2+"\\) is the horizontal asymptote of the graph."];
+    var dis2=["The graph crosses the line \\("+asy+"\\) at some point when \\(x\\) is very large.",
+              "The graph stops at the line \\("+asy+"\\) and does not continue past it in either direction from there.",
+              "The line \\(x = "+k2+"\\) is the horizontal asymptote of the graph shown."];
     return mcq("Which statement best describes the <b>horizontal asymptote</b> of the graph of "+eq2+"?",
       corr2,dis2,
       "The power in "+eq2+" is always positive and can become as small as we like, so the function values approach \\("+k2+"\\) (the asymptote \\("+asy+"\\)) without ever equalling it. That is the significance of the asymptote: it is a boundary the graph approaches but never reaches, and the value \\("+k2+"\\) is excluded from the range.",{ask:ask,k:k2});
@@ -4900,12 +4918,12 @@ E("u7-characteristics",7,["4.48"],2,"gen",function(){
       ?"It has an x-intercept, because the range \\(\\{y \\mid y > "+k3+"\\}\\) includes \\(0\\)."
       :"It has no x-intercept, because the values are always greater than \\("+k3+"\\), so the graph never reaches \\(y = 0\\).";
     var dis3=has
-      ?["It has no x-intercept, because exponential graphs never cross the x-axis.",
-        "Its x-intercept is the point \\((0, "+(1+k3)+")\\).",
-        "It has an x-intercept where the graph meets its horizontal asymptote."]
+      ?["It has no x-intercept, because exponential graphs never cross the x-axis at any point.",
+        "Its x-intercept is the point \\((0, "+(1+k3)+")\\), on the y-axis.",
+        "It has an x-intercept at the point where the graph meets its horizontal asymptote, far out to the right."]
       :["It has an x-intercept, because the range \\(\\{y \\mid y > "+k3+"\\}\\) includes \\(0\\).",
-        "Its x-intercept is the point \\((0, "+(1+k3)+")\\).",
-        "It has an x-intercept where the graph meets its horizontal asymptote."];
+        "Its x-intercept is the point \\((0, "+(1+k3)+")\\), on the y-axis.",
+        "It has an x-intercept at the point where the graph meets its horizontal asymptote, far out to the right of the graph."];
     return mcq("Which statement about the <b>x-intercept</b> of the graph of "+eq3+" is correct?",
       corr3,dis3,
       "The range of "+eq3+" is \\(\\{y \\mid y > "+k3+"\\}\\) because the power is positive and the graph is shifted by \\("+k3+"\\) . "+(has?"Since \\(0\\) is greater than \\("+k3+"\\), the value \\(0\\) is in the range, so the graph crosses the x-axis: it has an x-intercept. The point \\((0, "+(1+k3)+")\\) is the y-intercept, not the x-intercept.":"Since every value stays above \\("+k3+" > 0\\), the graph never reaches \\(y = 0\\), so there is no x-intercept.")+" The correct statement is: <b>"+corr3+"</b>",{ask:ask,k:k3});
@@ -5383,7 +5401,7 @@ E("u8-transformed-log",8,["4.39","4.49"],2,"gen",function(){
     {ask:ask, b:b, h:h});
   if (ask === "range") return mcq("What is the range of \\(" + fn + "\\)?",
     "all real numbers",
-    ["\\(y > " + k + "\\)", "\\(y < " + k + "\\)", "\\(y > 0\\)"],
+    ["\\(y > " + k + "\\)", "\\(y < " + k + "\\)", "positive real numbers only"],
     "As \\(" + argS + "\\) approaches \\(0\\), the logarithm falls without bound, and as \\(" + argS + "\\) grows, it rises without bound. The vertical shift and stretch do not bound the values, so every real number occurs.",
     {ask:ask, b:b});
   return mcq("The graph of \\(" + fn + "\\) is",
@@ -5441,7 +5459,7 @@ E("u8-extraneous",8,["4.33"],3,"gen",function(){
   if (mode === "judge"){
     return mcq("A student solves \\(" + eqStr + "\\) and obtains \\(x = " + T.r + "\\) and \\(x = " + T.r2 + "\\). Which values are actually solutions of the equation?",
       "Only \\(x = " + T.r + "\\)",
-      ["Only \\(x = " + T.r2 + "\\)", "Both \\(x = " + T.r + "\\) and \\(x = " + T.r2 + "\\)", "Neither value"],
+      ["Only \\(x = " + T.r2 + "\\)", "Both values", "Neither value"],
       sol, {mode:mode, b:T.b});
   }
   if (mode === "solset"){
@@ -5453,16 +5471,16 @@ E("u8-extraneous",8,["4.33"],3,"gen",function(){
   if (mode === "error"){
     return mcq("A student solves the equation as shown. " + work + " The student concludes that both values are solutions. What is the error?",
       "The student did not check the domain of the original equation; \\(x = " + T.r2 + "\\) makes an argument negative",
-      ["The student combined the logarithms incorrectly",
-       "The student factored the quadratic incorrectly",
-       "There is no error; both values are solutions"],
+      ["The student combined the logarithms incorrectly when writing them as one logarithm at the first step of the solution",
+       "The student factored the resulting quadratic incorrectly",
+       "There is no error in the work shown; both values are solutions of the equation"],
       sol, {mode:mode, b:T.b});
   }
   return mcq("When solving \\(" + eqStr + "\\), the value \\(x = " + T.r2 + "\\) is rejected. Why?",
     "It makes an argument of one of the logarithms negative, so that logarithm is undefined",
-    ["Logarithm values cannot be negative, and this value is negative",
-     "It does not satisfy the quadratic equation",
-     "An equation with two logarithms can have only one solution"],
+    ["Logarithm values cannot be negative, and this value is negative, so it cannot be kept as a solution",
+     "It does not satisfy the quadratic equation that came from the first step",
+     "An equation with two logarithms can have only one solution, never two"],
     sol, {mode:mode, b:T.b});
 });
 
@@ -5697,9 +5715,9 @@ E("u9-patterns-coefficients",9,["3.14","3.16","3.17"],2,"gen",function(){
   var n6=pick([5,6,7]), b6=pick([2,3]), a6=n6-b6, v6=u9comb(n6,b6);
   var key="Each product that gives \\(x^{"+a6+"} y^{"+b6+"}\\) is formed by choosing which "+b6+" of the "+n6+" factors supply a \\(y\\), and there are \\("+u9binS(n6,b6)+"\\) such choices";
   var dis3=u9opts(key,[
-    "The exponents "+a6+" and "+b6+" add to "+n6+", and adding exponents is how coefficients are counted",
-    "The coefficient is the "+(b6===2?"2nd":"3rd")+" entry of row "+n6+" of Pascal's triangle, counted from the left edge",
-    "Because "+n6+" - "+a6+" = "+b6+", the second exponent is the one used in the combination"
+    "The exponents "+a6+" and "+b6+" add to "+n6+", and adding exponents is how coefficients are counted, since each term is built by adding the exponents from the factors one at a time",
+    "The coefficient is the "+(b6===2?"2nd":"3rd")+" entry of row "+n6+" of Pascal's triangle, counted from the left edge of the row",
+    "Because "+n6+" - "+a6+" = "+b6+", the second exponent is the one used in the combination, and no other count is involved"
   ]);
   return mcq("The coefficient of \\(x^{"+a6+"} y^{"+b6+"}\\) in the expansion of \\((x + y)^{"+n6+"}\\) is \\("+u9binS(n6,b6)+" = "+v6+"\\). Why is the coefficient given by a combination?",
     key,dis3,
@@ -5905,7 +5923,7 @@ E("u9-why-multiply",9,["9.2"],3,"var",varset([
       "The 9 counts individual dishes; each starter pairs with all 5 desserts, giving 4 groups of 5 meals",
       ["The student should have divided 5 by 4, because the courses are different sizes",
        "The 9 is correct for meals, and multiplication is only needed when there are three courses",
-       "The student used the wrong operation because meals are always counted with factorials"],
+       "The student used the wrong operation because meals are always counted with factorials, not with sums"],
       "A meal is a pair, one starter together with one dessert. For each of the 4 starters there are 5 desserts, so there are \\(4 \\times 5 = 20\\) meals. The sum \\(4 + 5\\) counts dishes, not pairs.",
       {v:2});
   },
@@ -5914,16 +5932,16 @@ E("u9-why-multiply",9,["9.2"],3,"var",varset([
       "Each of the 3 size branches splits into 4 flavour branches, making 3 equal groups of 4 endpoints",
       ["The tree has one endpoint for each option, and 3 and 4 make 12 when combined in any tree",
        "Endpoints are counted by adding the options at each stage, and the stages here are equal in size",
-       "Each flavour appears on 4 branches, so the endpoints are counted 4 at a time until 12 is reached"],
+       "Each flavour appears on 4 branches, so the endpoints are counted 4 at a time until the total of 12 is reached"],
       "The first stage creates 3 branches. Every one of those branches is then split by the 4 flavours, so the endpoints come in 3 identical groups of 4: \\(3 \\times 4 = 12\\).",
       {v:3});
   },
   function(){
     return mcq("Which statement correctly explains when to multiply and when to add in a counting problem?",
       "Multiply when every outcome of one choice can be combined with every outcome of another; add when the outcomes come from separate cases that do not combine",
-      ["Multiply when the problem mentions two or more objects; add when it mentions only one object",
-       "Multiply when order matters in the final arrangement; add when order does not matter",
-       "Multiply when the numbers are large enough that listing is slow; add when a list is short enough to write out"],
+      ["Multiply when the problem mentions two or more objects being combined; add when it mentions only one object",
+       "Multiply when order matters in the final arrangement being counted; add when order does not matter",
+       "Multiply when the numbers are large enough that listing every possible outcome is slow and impractical; add when a list is short enough to write out in full on the page"],
       "Multiplication counts combinations of choices that happen together, because each outcome of one stage is repeated for every outcome of the next. Addition counts disjoint cases, where an outcome belongs to one case or the other but never both.",
       {v:4});
   }
@@ -6274,9 +6292,9 @@ E("u9-comb-symmetry-solve",9,["9.14","9.15"],2,"gen",function(){
     var n3=pick([9,10,11,12]), r3=pick([3,4]);
     var key="Choosing which "+r3+" of the "+n3+" items to include also decides which "+(n3-r3)+" items are left out, so the two choices are counted by the same number";
     var dis=u9opts(key,[
-      "The factorials in the two expressions are the same because "+n3+" is even and the lower numbers are close in size",
-      "Both expressions simplify to the same product because the larger lower number always cancels more factors",
-      "Pascal's triangle is symmetric left to right, and the equality is true because the triangle says so"]);
+      "The factorials in the two expressions are the same because "+n3+" is even and the two lower numbers are close in size to each other",
+      "Both expressions simplify to the same product of factors because the larger lower number always cancels more factors from the top number",
+      "Pascal's triangle is symmetric left to right, and the equality is true because the triangle says so, as it does in every row"]);
     return mcq("Why is \\("+u9binS(n3,r3)+" = "+u9binS(n3,n3-r3)+"\\)?",
       key,dis,
       "A combination counts selections. Selecting the "+r3+" items to take is the very same act as selecting the "+(n3-r3)+" items to leave behind: each selection of one kind corresponds to exactly one selection of the other kind, so the counts agree.",
@@ -6312,27 +6330,27 @@ E("u9-why-n-ge-r",9,["9.7","9.13"],3,"var",varset([
   function(){
     return mcq("Why must \\(n \\ge r\\) in the notation \\("+u9permS("n","r")+"\\)?",
       "A permutation arranges \\(r\\) distinct elements drawn from a set of \\(n\\), and a set cannot supply more distinct elements than it has",
-      ["Because \\("+u9permS("n","r")+"\\) must always be smaller than \\(n!\\)",
-       "Because the formula divides by \\(r!\\), and dividing by a larger factorial is not allowed",
-       "Because \\(r\\) counts positions, and a row of positions is never longer than the number written first"],
+      ["Because \\("+u9permS("n","r")+"\\) must always be smaller than \\(n!\\), whatever the values of \\(n\\) and \\(r\\) are in the arrangement",
+       "Because the formula divides by \\(r!\\), and dividing by a larger factorial is not allowed in the formula as written",
+       "Because \\(r\\) counts positions, and a row of positions is never longer than the number written first in the notation, by definition"],
       "The notation \\("+u9permS("n","r")+"\\) counts arrangements of \\(r\\) different elements chosen from \\(n\\) elements. If \\(r > n\\), there are not enough distinct elements to fill the arrangement, and the formula \\(\\frac{n!}{(n - r)!}\\) would also call for the factorial of a negative number.",
       {v:1});
   },
   function(){
     return mcq("Why must \\(n \\ge r\\) in the notation \\("+u9binS("n","r")+"\\)?",
       "A combination selects \\(r\\) distinct elements from \\(n\\) elements, and no subset of an \\(n\\)-element set has more than \\(n\\) elements",
-      ["Because the two lower numbers in a combination must always add to the top number",
-       "Because combinations are only defined when the answer is a whole number greater than 1",
-       "Because Pascal's triangle has no entries beyond the edges of a row"],
+      ["Because the two lower numbers in a combination must always add to the top number in every case, by the symmetry rule",
+       "Because combinations are only defined when the answer is a whole number greater than 1, and that needs enough elements",
+       "Because Pascal's triangle has no entries beyond the edges of a row, and a combination must name an entry of the triangle to be read off"],
       "The notation \\("+u9binS("n","r")+"\\) counts the subsets of size \\(r\\) in a set of \\(n\\) elements. A subset cannot contain more elements than the set itself, so \\(r\\) can be at most \\(n\\); equality is allowed, since the whole set is one valid selection.",
       {v:2});
   },
   function(){
     return mcq("A student tries to evaluate \\("+u9permS(4,6)+"\\) by writing \\(4 \\times 3 \\times 2 \\times 1 \\times 0 \\times (-1)\\). What is wrong with this?",
       "The product for \\("+u9permS("n","r")+"\\) has \\(r\\) factors counting down from \\(n\\), but the elements run out after 4 factors, so \\("+u9permS(4,6)+"\\) is not defined",
-      ["Nothing is wrong; the result is 0 because one of the factors is 0",
-       "The student should have stopped at 1 and reported the value 24, since extra factors are ignored",
-       "The error is that the factors should count down from 6, not from 4"],
+      ["Nothing is wrong with the working; the result is 0 because one of the factors in the product is 0, as the student says",
+       "The student should have stopped at 1 and reported the value 24, since extra factors are ignored in a product like this, as a matter of convention",
+       "The error is that the factors should count down from 6, not from 4, since 6 is the larger number of the two"],
       "A permutation of 6 distinct elements taken from only 4 elements cannot be formed: after 4 factors there are no elements left to place. The notation requires \\(n \\ge r\\), so \\("+u9permS(4,6)+"\\) has no value.",
       {v:3});
   },
