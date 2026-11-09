@@ -1318,6 +1318,28 @@ E("u1-equation-from-graph",1,["3.13"],3,"gen",function(){
   return q;
 });
 
+/* ---------- Unit-test pool fix, Nov 9, 2026: two Level 2 CR entries (3 and 2 marks). The Unit 1 Level 2 CR pool held only 2-mark entries, so the 9-mark and 8-mark remainders behind the 5 and 6 Level 3 picks could not form. ---------- */
+E("u1-largest-zero-cr",1,["3.4","3.9"],2,"gen",function(){
+  var roots=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,3);
+  var given=roots[0], cf=u1FromRoots(1,roots.map(function(r){return [r,1];}));
+  var q=u1Synth(cf,given).q, ans=Math.max(roots[0],roots[1],roots[2]);
+  var sorted=roots.slice().sort(function(x,y){return x-y;});
+  return numq("The polynomial \\(P(x) = "+u1PolyS(cf)+"\\) has \\("+u1FacS(given)+"\\) as a factor. What is the <b>greatest zero</b> of \\(P\\)?",
+    ans,0.001,
+    "Divide \\(P\\) by \\("+u1FacS(given)+"\\) using synthetic division with \\("+given+"\\):"+u1Tableau(cf,given)+
+    "The quotient is \\("+u1PolyS(q)+"\\), which factors as \\("+u1FacS(roots[1])+u1FacS(roots[2])+"\\). So the zeros of \\(P\\) are "+sorted[0]+", "+sorted[1]+" and "+sorted[2]+", and the greatest zero is <b>"+ans+"</b>.",
+    {roots:roots});
+});
+E("u1-tableau-step-cr",1,["3.1"],2,"gen",function(){
+  var cf=[1,ri(-6,6),ri(-9,9),ri(-9,9)], a=pick([-4,-3,-2,-1,1,2,3,4]);
+  var b1=cf[1]+a*cf[0], b2=cf[2]+a*b1;
+  return numq("When \\(P(x) = "+u1PolyS(cf)+"\\) is divided by \\("+u1FacS(a)+"\\) using synthetic division, the bottom row of the tableau starts \\("+cf[0]+", "+b1+", \\ldots\\) What is the <b>next entry</b> in the bottom row?",
+    b2,0.001,
+    "In synthetic division, each bottom-row entry is multiplied by \\("+a+"\\) and added to the next coefficient. The full tableau is:"+u1Tableau(cf,a)+
+    "The second entry is \\("+cf[1]+" + ("+a+")("+cf[0]+") = "+b1+"\\). Multiplying it by \\("+a+"\\) and adding the next coefficient gives \\("+cf[2]+" + ("+a+")("+b1+") = <b>"+b2+"</b>\\).",
+    {cf:cf,a:a});
+});
+
 /* ================= Unit 2: Function Transformations ================= */
 /* ================= Unit 2: Function Transformations =================
    Bank source chunk for the Math 3200 Review app. Helpers are prefixed u2.
@@ -1814,6 +1836,51 @@ E("u2-refl-yx",2,["4.46","4.47"],3,"var",varset([
     {v:4});}
 ]));
 
+/* ---------- Unit-test pool fix, Nov 9, 2026: one Level 3 CR entry (3 marks, opens the 6 pick with the existing 3-mark entry) and two Level 2 CR entries (3 and 2 marks). ---------- */
+E("u2-find-stretch-cr",2,["4.17","4.24"],3,"gen",function(){
+  var h=pick([-3,-2,-1,1,2,3]), u=ri(-4,4), v=pick([-6,-5,-4,-3,-2,2,3,4,5,6]), a=pick([-3,-2,2,3]), k=pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var X=u+h, Y=a*v+k;
+  var hs=h>0?"x - "+h:"x + "+(-h), ks=k>0?" + "+k:" - "+(-k);
+  return numq("The point \\(("+X+", "+Y+")\\) lies on the graph of \\(y = a f("+hs+")"+ks+"\\), and \\(f("+u+") = "+v+"\\). Determine the value of \\(a\\).",
+    a,0.001,
+    "At this point the input to \\(f\\) is \\(("+X+") - ("+h+") = "+u+"\\), and \\(f("+u+") = "+v+"\\). On the transformed graph, that output is multiplied by \\(a\\) and then shifted by \\(("+k+")\\): \\[ a("+v+") + ("+k+") = "+Y+" \\] So \\(a("+v+") = "+(Y-k)+"\\), and \\(a = "+(Y-k)+" \\div "+v+" = <b>"+a+"</b>\\).",
+    {h:h,u:u,v:v,k:k});
+});
+E("u2-inverse-points-cr",2,["4.2","4.4"],2,"gen",function(){
+  var xs=shuffle([-4,-3,-2,-1,0,1,2,3,4]).slice(0,5);
+  var ys=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,5);
+  var pts=xs.map(function(x,i){return [x,ys[i]];});
+  var tg=pick(pts);
+  var list=pts.map(function(p){return u2pt(p[0],p[1]);}).join(", ");
+  return numq("A relation contains the points \\("+list+"\\). The inverse relation is formed by swapping the coordinates of each point. In the inverse relation, what is the <b>y-coordinate</b> of the point whose x-coordinate is "+tg[1]+"?",
+    tg[0],0.001,
+    "Swapping the coordinates of \\("+u2pt(tg[0],tg[1])+"\\) gives the inverse point \\("+u2pt(tg[1],tg[0])+"\\), and no other listed point produces that x-coordinate. Its y-coordinate is <b>"+tg[0]+"</b>.",
+    {tg:tg});
+});
+function u2reflPoly(A,B,C){ var s=(A===1?"x^2":A===-1?"-x^2":A+"x^2"); s+=(B>0?" + ":" - ")+(Math.abs(B)===1?"x":Math.abs(B)+"x"); s+=(C>0?" + "+C:" - "+(-C)); return s; }
+E("u2-reflection-equation-cr",2,["4.43","4.44"],2,"var",varset([
+  function(){
+    var a=pick([1,2,3]), b=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]), c=pick([-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8]);
+    return mcq("The graph of \\(f(x) = "+u2reflPoly(a,b,c)+"\\) is reflected in the <b>y-axis</b>. What is the equation of the image?",
+      "\\(y = "+u2reflPoly(a,-b,c)+"\\)",
+      ["\\(y = "+u2reflPoly(a,b,c)+"\\)",
+       "\\(y = "+u2reflPoly(-a,-b,-c)+"\\)",
+       "\\(y = "+u2reflPoly(a,-b,-c)+"\\)"],
+      "A reflection in the y-axis replaces \\(x\\) with \\(-x\\). The \\(x^2\\) term is unchanged, the \\(x\\) term changes sign, and the constant is unchanged, giving <b>\\(y = "+u2reflPoly(a,-b,c)+"\\)</b>.",
+      {a:a,b:b,c:c,axis:"y"});
+  },
+  function(){
+    var a=pick([1,2,3]), b=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]), c=pick([-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8]);
+    return mcq("The graph of \\(f(x) = "+u2reflPoly(a,b,c)+"\\) is reflected in the <b>x-axis</b>. What is the equation of the image?",
+      "\\(y = "+u2reflPoly(-a,-b,-c)+"\\)",
+      ["\\(y = "+u2reflPoly(a,-b,c)+"\\)",
+       "\\(y = "+u2reflPoly(a,b,c)+"\\)",
+       "\\(y = "+u2reflPoly(-a,-b,c)+"\\)"],
+      "A reflection in the x-axis negates the whole function: every term of \\(f(x)\\) changes sign, giving <b>\\(y = "+u2reflPoly(-a,-b,-c)+"\\)</b>.",
+      {a:a,b:b,c:c,axis:"x"});
+  }
+]));
+
 /* ================= Unit 3: Radical Functions ================= */
 /* ================= Unit 3: Radical Functions ================= */
 /* Indicators: 4.9, 4.10, 4.11, 4.12, 4.25, 4.26. Types follow the Mauger
@@ -2024,6 +2091,50 @@ E("u3-intercept-statement",3,["4.25"],1,"gen",function(){
     ["\\("+rad+" = 0\\)","\\("+rad+" = "+(-b)+"\\)","\\("+radOpp+" = "+b+"\\)"],
     "At an x-intercept, the y-value is \\(0\\): \\[ \\begin{aligned} 0 &= "+rad+" - "+b+" \\\\ "+rad+" &= "+b+" \\end{aligned} \\] So the intercept \\(x = "+tv+"\\) is a root of the equation \\("+rad+" = "+b+"\\). This is the general relationship: the roots of a radical equation are the x-intercepts of the corresponding radical function.",
     {a:a,b:b,form:form});
+});
+
+/* ---------- Unit-test pool fix, Nov 9, 2026: two Level 3 CR entries (2 and 3 marks) and two Level 2 CR entries (3 and 2 marks). The unit had a single Level 3 CR entry and an all-2-mark Level 2 pool. ---------- */
+function u3facS(r){ return r===0?"x":(r>0?"(x - "+r+")":"(x + "+(-r)+")"); }
+E("u3-domain-from-quadratic-cr",3,["4.9"],3,"gen",function(){
+  var p=ri(-6,2), q=p+ri(2,6), B=-(p+q), C=p*q;
+  var fs="x^2";
+  if(B!==0) fs+=(B>0?" + ":" - ")+(Math.abs(B)===1?"x":Math.abs(B)+"x");
+  if(C!==0) fs+=(C>0?" + "+C:" - "+(-C));
+  return mcq("What is the domain of the function \\(g(x) = \\sqrt{"+fs+"}\\)?",
+    "\\(x \\leq "+p+"\\) or \\(x \\geq "+q+"\\)",
+    ["\\("+p+" \\leq x \\leq "+q+"\\)",
+     "\\(x \\geq "+q+"\\) only",
+     "All real numbers"],
+    "The radicand must be non-negative. Since \\("+fs+" = "+u3facS(p)+u3facS(q)+"\\), the radicand is zero at \\(x = "+p+"\\) and \\(x = "+q+"\\). The parabola opens upward, so the radicand is positive outside the interval between the roots. The domain is \\(x \\leq "+p+"\\) or \\(x \\geq "+q+"\\).",
+    {p:p,q:q});
+});
+E("u3-recover-coefficient-cr",3,["4.12"],3,"gen",function(){
+  var p=ri(-5,1), q=p+ri(3,7);
+  var side=pick([0,1]), t=side===0? q+ri(1,5) : p-ri(1,5);
+  var fv=(t-p)*(t-q);
+  return numq("The function \\(g(x) = \\sqrt{f(x)}\\), where \\(f\\) is a quadratic function with leading coefficient 1, has domain \\(x \\leq "+p+"\\) or \\(x \\geq "+q+"\\). Determine the value of \\(f("+t+")\\).",
+    fv,0.001,
+    "The endpoints of the domain are the zeros of \\(f\\), so \\(f(x) = "+u3facS(p)+u3facS(q)+"\\). Evaluating at \\(x = "+t+"\\): \\(f("+t+") = ("+t+" "+(p>=0?"- "+p:"+ "+(-p))+")("+t+" "+(q>=0?"- "+q:"+ "+(-q))+") = "+(t-p)+" \\times "+(t-q)+" = <b>"+fv+"</b>\\).",
+    {p:p,q:q,t:t});
+});
+E("u3-evaluate-transformed-cr",3,["4.11"],2,"gen",function(){
+  var b=pick([1,4]), s=b===1? ri(2,6) : pick([2,4,6]);
+  var a=pick([2,3,-2,-3]), h=ri(-4,4), k=pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var t=h+s*s/b, ans=a*s+k;
+  var inside=b===1? u3inside(-h) : b+"(x"+(h===0?"":(h>0?" - "+h:" + "+(-h)))+")";
+  var ks=k>0?"+ "+k:"- "+(-k);
+  return numq("Given \\(g(x) = "+a+"\\sqrt{"+inside+"} "+(k>0?"+":"-")+" "+Math.abs(k)+"\\), determine the value of \\(g("+t+")\\).",
+    ans,0.001,
+    "At \\(x = "+t+"\\), the radicand is \\("+b+" \\times "+(t-h)+" = "+(s*s)+"\\), and \\(\\sqrt{"+(s*s)+"} = "+s+"\\). \\[ \\begin{aligned} g("+t+") &= "+a+"("+s+") "+ks+" \\\\ &= "+(a*s)+" "+ks+" \\\\ &= <b>"+ans+"</b> \\end{aligned} \\]",
+    {b:b,s:s,a:a,h:h,k:k});
+});
+E("u3-shift-from-intercept-cr",3,["4.25"],2,"gen",function(){
+  var b=ri(2,6), i=ri(-4,10); if(b*b-i===0) i=i-3;
+  var c=b*b-i;
+  return numq("The graph of \\(y = \\sqrt{x + c} - "+b+"\\) has x-intercept "+i+". Determine the value of \\(c\\).",
+    c,0.001,
+    "At the x-intercept, \\(y = 0\\): \\[ \\begin{aligned} 0 &= \\sqrt{"+i+" + c} - "+b+" \\\\ \\sqrt{"+i+" + c} &= "+b+" \\\\ "+i+" + c &= "+(b*b)+" \\\\ c &= <b>"+c+"</b> \\end{aligned} \\]",
+    {b:b,i:i});
 });
 
 /* ================= Unit 4: Trigonometry and the Unit Circle ================= */
@@ -2766,6 +2877,90 @@ E("u4-arc-compare", 4, ["7.9", "7.3"], 3, "gen", function () {
     { mode: "diff", r1: r1, t1: t1, r2: r2, t2: t2 });
 });
 
+/* ---------- Unit-test pool fix, Nov 9, 2026: one Level 3 CR entry (3 marks, opens the 6 pick with the existing 3-mark entry) and one Level 2 CR entry (3 marks, makes the 9-mark remainder reachable). ---------- */
+E("u4-repair-solution-cr",4,["7.37"],3,"var",varset([
+  function(){
+    return mcq("A student solves \\(\\sin x = \\frac{1}{2}\\) for \\(0 \\leq x < 2\\pi\\) and stops after writing \\(x = \\frac{\\pi}{6}\\), the value returned by the inverse sine key. What is the <b>complete</b> solution?",
+      "\\(\\{\\frac{\\pi}{6}, \\frac{5\\pi}{6}\\}\\)",
+      ["\\(\\{\\frac{\\pi}{6}\\}\\)",
+       "\\(\\{\\frac{\\pi}{6}, \\frac{7\\pi}{6}\\}\\)",
+       "\\(\\{\\frac{\\pi}{3}, \\frac{2\\pi}{3}\\}\\)"],
+      "Sine is positive in quadrants I and II. The reference angle is \\(\\frac{\\pi}{6}\\), so there is a second solution, \\(\\pi - \\frac{\\pi}{6} = \\frac{5\\pi}{6}\\). The complete solution is \\(\\{\\frac{\\pi}{6}, \\frac{5\\pi}{6}\\}\\). The inverse key alone returns only the quadrant I value.",
+      {sc:"sin-half"});
+  },
+  function(){
+    return mcq("A student solves \\(\\cos x = -\\frac{1}{2}\\) for \\(0 \\leq x < 2\\pi\\) and stops after writing \\(x = \\frac{2\\pi}{3}\\), the value returned by the inverse cosine key. What is the <b>complete</b> solution?",
+      "\\(\\{\\frac{2\\pi}{3}, \\frac{4\\pi}{3}\\}\\)",
+      ["\\(\\{\\frac{2\\pi}{3}\\}\\)",
+       "\\(\\{\\frac{\\pi}{3}, \\frac{5\\pi}{3}\\}\\)",
+       "\\(\\{\\frac{\\pi}{3}, \\frac{2\\pi}{3}\\}\\)"],
+      "Cosine is negative in quadrants II and III. The reference angle is \\(\\frac{\\pi}{3}\\), giving \\(\\pi - \\frac{\\pi}{3} = \\frac{2\\pi}{3}\\) and \\(\\pi + \\frac{\\pi}{3} = \\frac{4\\pi}{3}\\). The complete solution is \\(\\{\\frac{2\\pi}{3}, \\frac{4\\pi}{3}\\}\\). The inverse key alone returns only the quadrant II value.",
+      {sc:"cos-neg-half"});
+  },
+  function(){
+    return mcq("A student solves \\(\\sin x = -\\frac{\\sqrt{3}}{2}\\) for \\(0 \\leq x < 2\\pi\\) and stops after writing \\(x = \\frac{4\\pi}{3}\\), the first solution found on the unit circle. What is the <b>complete</b> solution?",
+      "\\(\\{\\frac{4\\pi}{3}, \\frac{5\\pi}{3}\\}\\)",
+      ["\\(\\{\\frac{4\\pi}{3}\\}\\)",
+       "\\(\\{\\frac{\\pi}{3}, \\frac{2\\pi}{3}\\}\\)",
+       "\\(\\{\\frac{4\\pi}{3}, \\frac{7\\pi}{3}\\}\\)"],
+      "Sine is negative in quadrants III and IV. The reference angle is \\(\\frac{\\pi}{3}\\), giving \\(\\pi + \\frac{\\pi}{3} = \\frac{4\\pi}{3}\\) and \\(2\\pi - \\frac{\\pi}{3} = \\frac{5\\pi}{3}\\). The complete solution is \\(\\{\\frac{4\\pi}{3}, \\frac{5\\pi}{3}\\}\\). The value \\(\\frac{7\\pi}{3}\\) lies outside the stated interval.",
+      {sc:"sin-neg-root3"});
+  },
+  function(){
+    return mcq("A student solves \\(\\tan x = 1\\) for \\(0 \\leq x < 2\\pi\\) and stops after writing \\(x = \\frac{\\pi}{4}\\), the value returned by the inverse tangent key. What is the <b>complete</b> solution?",
+      "\\(\\{\\frac{\\pi}{4}, \\frac{5\\pi}{4}\\}\\)",
+      ["\\(\\{\\frac{\\pi}{4}\\}\\)",
+       "\\(\\{\\frac{\\pi}{4}, \\frac{3\\pi}{4}\\}\\)",
+       "\\(\\{\\frac{3\\pi}{4}, \\frac{7\\pi}{4}\\}\\)"],
+      "Tangent is positive in quadrants I and III, and its period is \\(\\pi\\), so the solutions repeat every \\(\\pi\\): \\(\\frac{\\pi}{4}\\) and \\(\\frac{\\pi}{4} + \\pi = \\frac{5\\pi}{4}\\). The complete solution is \\(\\{\\frac{\\pi}{4}, \\frac{5\\pi}{4}\\}\\).",
+      {sc:"tan-one"});
+  }
+]));
+E("u4-angle-measures-cr",4,["7.16"],2,"var",varset([
+  function(){
+    var ref=Math.asin(3/5), ans=Math.PI+ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\sin\\theta = -\\frac{3}{5}\\) and \\(\\pi \\leq \\theta \\leq \\frac{3\\pi}{2}\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\sin^{-1}\\left(\\frac{3}{5}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant III, \\(\\theta = \\pi + \\alpha \\approx 3.1416 + "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"sin35-q3"});
+  },
+  function(){
+    var ref=Math.asin(5/13), ans=2*Math.PI-ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\sin\\theta = -\\frac{5}{13}\\) and \\(\\frac{3\\pi}{2} \\leq \\theta \\leq 2\\pi\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\sin^{-1}\\left(\\frac{5}{13}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant IV, \\(\\theta = 2\\pi - \\alpha \\approx 6.2832 - "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"sin513-q4"});
+  },
+  function(){
+    var ref=Math.acos(7/25), ans=Math.PI-ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\cos\\theta = -\\frac{7}{25}\\) and \\(\\frac{\\pi}{2} \\leq \\theta \\leq \\pi\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\cos^{-1}\\left(\\frac{7}{25}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant II, \\(\\theta = \\pi - \\alpha \\approx 3.1416 - "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"cos725-q2"});
+  },
+  function(){
+    var ref=Math.acos(8/17), ans=Math.PI+ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\cos\\theta = -\\frac{8}{17}\\) and \\(\\pi \\leq \\theta \\leq \\frac{3\\pi}{2}\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\cos^{-1}\\left(\\frac{8}{17}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant III, \\(\\theta = \\pi + \\alpha \\approx 3.1416 + "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"cos817-q3"});
+  },
+  function(){
+    var ref=Math.atan(3/4), ans=Math.PI+ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\tan\\theta = \\frac{3}{4}\\) and \\(\\pi \\leq \\theta \\leq \\frac{3\\pi}{2}\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\tan^{-1}\\left(\\frac{3}{4}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant III, \\(\\theta = \\pi + \\alpha \\approx 3.1416 + "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"tan34-q3"});
+  },
+  function(){
+    var ref=Math.atan(5/12), ans=2*Math.PI-ref;
+    return numq("The angle \\(\\theta\\) satisfies \\(\\tan\\theta = -\\frac{5}{12}\\) and \\(\\frac{3\\pi}{2} \\leq \\theta \\leq 2\\pi\\). Determine \\(\\theta\\), in radians, to two decimal places.",
+      Math.round(ans*100)/100,0.01,
+      "The reference angle is \\(\\alpha = \\tan^{-1}\\left(\\frac{5}{12}\\right) \\approx "+fmt(ref,4)+"\\). In quadrant IV, \\(\\theta = 2\\pi - \\alpha \\approx 6.2832 - "+fmt(ref,4)+" = <b>"+fmt(ans,2)+"</b>\\).",
+      {sc:"tan512-q4"});
+  }
+]));
+
 /* ================= Unit 5: Trigonometric Functions and Graphs ================= */
 /* ================= Unit 5: Trigonometric Functions and Graphs ================= */
 /* Helpers are prefixed u5. Angles are in degrees unless a question says radians. */
@@ -3293,6 +3488,40 @@ E("u5-tan-graph",5,["7.32"],2,"var",varset([
     q.figure=u5Plot(u5Fn(1,"tan",1,0,0),0,540,-4,4,{gx:90,gy:1,labelX:true,labelY:true});
     return q;}
 ]));
+
+/* ---------- Unit-test pool fix, Nov 9, 2026: three Level 2 CR entries (3, 2 and 2 marks). The Level 2 CR pool held only two 2-mark entries, so no remainder behind any Level 3 pick could form. ---------- */
+E("u5-equation-evaluate-cr",5,["7.28","7.26"],2,"gen",function(){
+  var P=pick([12,24,8]), A=pick([2,3,4,5]), h=pick([0,1,2,3]), k=pick([-3,-2,-1,1,2,3]);
+  var phis;
+  if(P===8) phis=[[Math.PI/2,"\\frac{\\pi}{2}",1],[Math.PI,"\\pi",0],[3*Math.PI/2,"\\frac{3\\pi}{2}",-1]];
+  else phis=[[Math.PI/6,"\\frac{\\pi}{6}",0.5],[Math.PI/2,"\\frac{\\pi}{2}",1],[Math.PI,"\\pi",0],[3*Math.PI/2,"\\frac{3\\pi}{2}",-1]];
+  var ph=pick(phis), t=h+Math.round(ph[0]*P/(2*Math.PI)), ans=A*ph[2]+k;
+  var bstr={8:"\\frac{\\pi}{4}",12:"\\frac{\\pi}{6}",24:"\\frac{\\pi}{12}"}[P];
+  var arg=h===0?"x":"(x - "+h+")", ks=k>0?"+ "+k:"- "+(-k);
+  var shift=h===0?"no phase shift":"a phase shift of "+h+" units to the right";
+  return numq("A sinusoidal function has amplitude "+A+", period "+P+", "+shift+", and midline \\(y = "+k+"\\). It is a sine function whose cycle starts at the midline and rises from there. Determine the value of the function at \\(x = "+t+"\\).",
+    ans,0.01,
+    "The equation is \\(y = "+A+"\\sin "+bstr+arg+" "+ks+"\\), since \\(b = \\frac{2\\pi}{"+P+"} = "+bstr+"\\). At \\(x = "+t+"\\), the argument is \\("+bstr+" \\times "+(t-h)+" = "+ph[1]+"\\), and \\(\\sin "+ph[1]+" = "+ph[2]+"\\). So the value is \\("+A+" \\times "+ph[2]+" "+ks+" = <b>"+fmt(ans,2)+"</b>\\).",
+    {P:P,A:A,h:h,k:k,t:t});
+});
+E("u5-first-maximum-cr",5,["7.29"],2,"gen",function(){
+  var o=pick([[12,"\\frac{\\pi}{6}"],[24,"\\frac{\\pi}{12}"],[8,"\\frac{\\pi}{4}"],[6,"\\frac{\\pi}{3}"],[16,"\\frac{\\pi}{8}"]]);
+  var P=o[0], bstr=o[1], A=pick([2,3,4,5,6]), h=pick([0,1,2,3]), k=pick([5,8,10,12]);
+  var t=h+P/4;
+  var arg=h===0?"t":"(t - "+h+")";
+  return numq("The height, in metres, of a rider on a Ferris wheel is modelled by \\(H(t) = "+A+"\\sin "+bstr+arg+" + "+k+"\\), where \\(t\\) is the time in minutes since the ride started. Determine the <b>first</b> time, in minutes, at which the rider reaches the maximum height.",
+    t,0.01,
+    "The height is greatest when the sine factor equals 1, which first happens when its argument equals \\(\\frac{\\pi}{2}\\). The argument "+bstr+arg+" increases from 0, and it reaches \\(\\frac{\\pi}{2}\\) after one quarter of the period. The period is "+P+" minutes, so the first maximum occurs at \\(t = "+h+" + \\frac{"+P+"}{4} = <b>"+fmt(t,2)+"</b>\\) minutes.",
+    {P:P,h:h});
+});
+E("u5-tan-asymptote-cr",5,["7.32","7.33"],2,"gen",function(){
+  var o=pick([[2,"2x",Math.PI/4],[3,"3x",Math.PI/6],[4,"4x",Math.PI/8],[0.5,"\\frac{x}{2}",Math.PI]]);
+  var b=o[0], bx=o[1], ans=o[2];
+  return numq("What is the smallest positive value of \\(x\\) at which the graph of \\(y = \\tan "+bx+"\\) has a vertical asymptote? Give your answer in radians, to three decimal places.",
+    Math.round(ans*1000)/1000,0.002,
+    "The tangent function has a vertical asymptote where its argument equals \\(\\frac{\\pi}{2}\\). Setting \\("+bx+" = \\frac{\\pi}{2}\\) and solving gives \\(x = "+fmt(ans,3)+"\\).",
+    {b:b});
+});
 
 /* ================= Unit 6: Trigonometric Identities ================= */
 /* ================= Unit 6: Trigonometric Identities =================
@@ -4368,6 +4597,66 @@ E("u6-why-insufficient", 6, ["7.46"], 3, "gen", function () {
     "A numerical check can support a claim or refute it, but equality at one value, or even at several values, never proves equality at every permissible value; that requires a proof. Here the sides differ at " + atC + ", so the relation is not an identity at all. The statement that fits is: <b>" + key + "</b>.",
     { tested: tested, counter: counter });
 });
+
+/* ---------- Unit-test pool fix, Nov 9, 2026: two Level 3 CR entries (3 and 2 marks). The unit had a single Level 3 CR entry, so only one Level 3 pick path existed. ---------- */
+E("u6-lost-solutions-cr",6,["7.37"],3,"var",varset([
+  function(){
+    return mcq("A student solves \\(\\sin x \\cos x = \\cos x\\) for \\(0 \\leq x < 2\\pi\\) by dividing both sides by \\(\\cos x\\), obtaining \\(\\sin x = 1\\) and the single solution \\(x = \\frac{\\pi}{2}\\). Dividing by an expression that can equal zero loses solutions. What is the <b>complete</b> solution?",
+      "\\(\\{\\frac{\\pi}{2}, \\frac{3\\pi}{2}\\}\\)",
+      ["\\(\\{\\frac{\\pi}{2}\\}\\)",
+       "\\(\\{\\frac{3\\pi}{2}\\}\\)",
+       "\\(\\{\\frac{\\pi}{2}, \\pi, \\frac{3\\pi}{2}\\}\\)"],
+      "Move every term to one side and factor instead of dividing: \\(\\cos x (\\sin x - 1) = 0\\). Then \\(\\cos x = 0\\) gives \\(x = \\frac{\\pi}{2}\\) or \\(\\frac{3\\pi}{2}\\), and \\(\\sin x = 1\\) gives \\(x = \\frac{\\pi}{2}\\). The complete solution is \\(\\{\\frac{\\pi}{2}, \\frac{3\\pi}{2}\\}\\). The solution \\(\\frac{3\\pi}{2}\\), where \\(\\cos x = 0\\), is the one the division discarded.",
+      {sc:"sincos"});
+  },
+  function(){
+    return mcq("A student solves \\(\\sin^2 x = \\sin x\\) for \\(0 \\leq x < 2\\pi\\) by dividing both sides by \\(\\sin x\\), obtaining \\(\\sin x = 1\\) and the single solution \\(x = \\frac{\\pi}{2}\\). Dividing by an expression that can equal zero loses solutions. What is the <b>complete</b> solution?",
+      "\\(\\{0, \\frac{\\pi}{2}, \\pi\\}\\)",
+      ["\\(\\{\\frac{\\pi}{2}\\}\\)",
+       "\\(\\{\\frac{\\pi}{2}, \\pi\\}\\)",
+       "\\(\\{0, \\frac{\\pi}{2}\\}\\)"],
+      "Move every term to one side and factor instead of dividing: \\(\\sin x (\\sin x - 1) = 0\\). Then \\(\\sin x = 0\\) gives \\(x = 0\\) or \\(\\pi\\), and \\(\\sin x = 1\\) gives \\(x = \\frac{\\pi}{2}\\). The complete solution is \\(\\{0, \\frac{\\pi}{2}, \\pi\\}\\). The solutions where \\(\\sin x = 0\\) are the ones the division discarded.",
+      {sc:"sinsq"});
+  },
+  function(){
+    return mcq("A student solves \\(\\tan^2 x = \\tan x\\) for \\(0 \\leq x < 2\\pi\\) by dividing both sides by \\(\\tan x\\), obtaining \\(\\tan x = 1\\) and the solutions \\(x = \\frac{\\pi}{4}\\) and \\(x = \\frac{5\\pi}{4}\\). Dividing by an expression that can equal zero loses solutions. What is the <b>complete</b> solution?",
+      "\\(\\{0, \\frac{\\pi}{4}, \\pi, \\frac{5\\pi}{4}\\}\\)",
+      ["\\(\\{\\frac{\\pi}{4}, \\frac{5\\pi}{4}\\}\\)",
+       "\\(\\{0, \\frac{\\pi}{4}, \\pi\\}\\)",
+       "\\(\\{\\frac{\\pi}{4}, \\pi, \\frac{5\\pi}{4}\\}\\)"],
+      "Move every term to one side and factor instead of dividing: \\(\\tan x (\\tan x - 1) = 0\\). Then \\(\\tan x = 0\\) gives \\(x = 0\\) or \\(\\pi\\), and \\(\\tan x = 1\\) gives \\(x = \\frac{\\pi}{4}\\) or \\(\\frac{5\\pi}{4}\\). The complete solution is \\(\\{0, \\frac{\\pi}{4}, \\pi, \\frac{5\\pi}{4}\\}\\). The solutions where \\(\\tan x = 0\\) are the ones the division discarded.",
+      {sc:"tansq"});
+  }
+]));
+E("u6-coincidence-check-cr",6,["7.42","7.46"],3,"var",varset([
+  function(){
+    return mcq("To check the claim \\(\\sin 2x = 2\\sin x\\), a student substitutes \\(x = 0\\) and finds that both sides equal 0. What is the correct conclusion?",
+      "The claim is false: at \\(x = \\frac{\\pi}{2}\\) the left side is 0 and the right side is 2",
+      ["The claim is proven, because the two sides are equal at \\(x = 0\\)",
+       "The claim is true for every \\(x\\), because it holds at \\(x = 0\\)",
+       "The claim fails at \\(x = 0\\), where the two sides are different"],
+      "One value where the sides agree never proves an identity; the claim must hold for every value. A single value where the sides differ disproves it: at \\(x = \\frac{\\pi}{2}\\), \\(\\sin 2x = \\sin \\pi = 0\\) while \\(2\\sin x = 2\\). So the claim is false, and the matching value at \\(x = 0\\) was a coincidence.",
+      {sc:"sin2x"});
+  },
+  function(){
+    return mcq("To check the claim \\(\\tan 2x = 2\\tan x\\), a student substitutes \\(x = 0\\) and finds that both sides equal 0. What is the correct conclusion?",
+      "The claim is false: at \\(x = \\frac{\\pi}{6}\\) the left side is \\(\\sqrt{3}\\) and the right side is \\(\\frac{2\\sqrt{3}}{3}\\)",
+      ["The claim is proven, because the two sides are equal at \\(x = 0\\)",
+       "The claim is true for every \\(x\\), because it holds at \\(x = 0\\)",
+       "The claim fails at \\(x = 0\\), where the two sides are different"],
+      "One value where the sides agree never proves an identity; the claim must hold for every value. A single value where the sides differ disproves it: at \\(x = \\frac{\\pi}{6}\\), \\(\\tan 2x = \\tan \\frac{\\pi}{3} = \\sqrt{3}\\) while \\(2\\tan x = 2\\tan \\frac{\\pi}{6} = \\frac{2\\sqrt{3}}{3}\\). So the claim is false, and the matching value at \\(x = 0\\) was a coincidence.",
+      {sc:"tan2x"});
+  },
+  function(){
+    return mcq("To check the claim \\(\\sqrt{\\sin^2 x} = \\sin x\\), a student substitutes \\(x = \\frac{\\pi}{4}\\) and finds that both sides equal \\(\\frac{\\sqrt{2}}{2}\\). What is the correct conclusion?",
+      "The claim is false: at \\(x = \\frac{5\\pi}{4}\\) the left side is \\(\\frac{\\sqrt{2}}{2}\\) and the right side is \\(-\\frac{\\sqrt{2}}{2}\\)",
+      ["The claim is proven, because the two sides are equal at \\(x = \\frac{\\pi}{4}\\)",
+       "The claim is true for every \\(x\\), because it holds at \\(x = \\frac{\\pi}{4}\\)",
+       "The claim fails at \\(x = \\frac{\\pi}{4}\\), where the two sides are different"],
+      "One value where the sides agree never proves an identity; the claim must hold for every value. A single value where the sides differ disproves it: at \\(x = \\frac{5\\pi}{4}\\), \\(\\sqrt{\\sin^2 x} = \\frac{\\sqrt{2}}{2}\\) (a square root is never negative) while \\(\\sin x = -\\frac{\\sqrt{2}}{2}\\). So the claim is false, and the matching value at \\(x = \\frac{\\pi}{4}\\) was a coincidence.",
+      {sc:"sqrt-sin"});
+  }
+]));
 
 /* ================= Unit 7: Exponential Functions ================= */
 /* ================= Unit 7: Exponential Functions ================= */
@@ -6369,7 +6658,59 @@ E("u9-why-n-ge-r",9,["9.7","9.13"],3,"var",varset([
 /* Exam Section B draws only from these entries (marks per question); every other
    entry is selected-response only in exam mode. Worksheet mode uses these plus
    all numeric-answer entries. */
-var CR_MARKS={"u1-divide-quotient":2,"u1-divide-result":2,"u1-end-behaviour":1,"u1-equation-from-graph":3,"u1-error-synthetic":2,"u1-find-coefficient":2,"u1-modelling":3,"u1-multiplicity-graph":1,"u1-remainder-point":1,"u1-remainder-value":1,"u1-which-factor":2,"u1-zeros-from-factors":1,"u2-full-equation":2,"u2-inv-domran":1,"u2-inv-equation":2,"u2-inv-figure":1,"u2-inv-restrict":2,"u2-refl-equation":1,"u2-refl-point":1,"u2-stretch-equation":2,"u2-stretch-identify":1,"u2-stretch-point":2,"u2-trans-describe":1,"u2-trans-equation":2,"u2-trans-point":1,"u2-trans-zeros":3,"u3-graphical-solve":1,"u3-intercept-solution":2,"u3-recover-f-value":3,"u3-sqrtf-evaluate":2,"u3-sqrtx-table":1,"u3-start-point":1,"u3-transform-domain-range":2,"u4-angle-from-ratio":2,"u4-approx-ratio":1,"u4-arc-compare":2,"u4-arc-length":2,"u4-circle-equation":1,"u4-circle-point-reasoning":3,"u4-coterminal":1,"u4-deg-to-rad":1,"u4-exact-special":1,"u4-one-radian":1,"u4-other-ratios":2,"u4-point-ratios-angle":2,"u4-rad-to-deg":1,"u4-ratio-problem":2,"u4-sketch-standard-position":1,"u4-solve-equation-approx":2,"u4-solve-equation-exact":2,"u5-amplitude-a":1,"u5-base-graph":1,"u5-characteristics":1,"u5-general-solution":2,"u5-graph-problem":2,"u5-key-points":2,"u5-model-build":3,"u5-model-conditions":3,"u5-period-b":1,"u5-phase-h":1,"u5-shift-k":1,"u5-solve-set":2,"u5-tan-features":1,"u5-which-solution":1,"u6-approx-solutions":2,"u6-exact-values":2,"u6-nonpermissible-basic":2,"u6-nonpermissible-identity":2,"u6-numeric-verify":1,"u6-proof-invalid-step":3,"u6-simplify-expression":2,"u6-solve-double-angle":2,"u6-solve-identity-sub":3,"u6-solve-quadratic":2,"u6-verify-solution":1,"u7-common-base-linear":2,"u7-common-base-radical":2,"u7-compare-models":3,"u7-compound-amount":2,"u7-compound-setup":1,"u7-growth-decay-amount":1,"u7-growth-decay-time":2,"u7-model-equation":2,"u7-model-from-data":4,"u7-sketch-key-points":1,"u7-solve-nocommon-base":2,"u7-transformed-graph":2,"u8-convert-form":1,"u8-estimate-approx":1,"u8-exact-value":1,"u8-extraneous":3,"u8-finance-periods":2,"u8-growth-time":2,"u8-inverse-graph":1,"u8-laws-equivalent":2,"u8-log-scales":2,"u8-model-log":3,"u8-sketch-log":1,"u8-solve-exp-logs":2,"u8-solve-log-eq":2,"u8-transformed-log":1,"u9-binomial-expand":2,"u9-binomial-term":2,"u9-comb-basic":2,"u9-comb-symmetry-solve":2,"u9-counting-organizers":1,"u9-factorial-notation":1,"u9-fcp-apply":1,"u9-identical-elements":2,"u9-pascal-next-row":1,"u9-patterns-coefficients":2,"u9-perm-basic":2,"u9-perm-constraints":3,"u9-perm-or-comb":2,"u9-perm-solve":2};
+/* ---------- Unit-test pool fix, Nov 9, 2026: two Level 1 MC generators (the unit's two mixed-mode generators could not reliably field four distinct Level 1 MC questions), one Level 2 CR entry (3 marks) and one Level 3 CR entry (3 marks, opens the 6 pick with the existing 3-mark entry). ---------- */
+E("u9-fcp-meal-mc",9,["9.3"],1,"gen",function(){
+  var CTX=[
+    "A cafeteria offers %a soups, %b main dishes and %c drinks. How many different meals, each consisting of one soup, one main dish and one drink, are possible?",
+    "A clothing rack holds %a shirts, %b pairs of pants and %c hats. How many different outfits, each consisting of one shirt, one pair of pants and one hat, are possible?",
+    "A travel site lists %a flights, %b hotels and %c tours for a trip. How many different packages, each consisting of one flight, one hotel and one tour, are possible?"
+  ];
+  var a=2,b=2,c=2,key=0,d1=0,d2=0,d3=0,tries=0;
+  do { a=ri(2,6); b=ri(2,6); c=ri(2,5); key=a*b*c; d1=a+b+c; d2=(a+1)*b*c; d3=a*b+c; tries++; }
+  while(new Set([key,d1,d2,d3]).size<4 && tries<60);
+  var stem=pick(CTX).replace("%a",a).replace("%b",b).replace("%c",c);
+  return mcq(stem,
+    ""+key,
+    [""+d1,""+d2,""+d3],
+    "Each stage is an independent choice, so the Fundamental Counting Principle says to multiply: \\("+a+" \\times "+b+" \\times "+c+" = <b>"+key+"</b>\\).",
+    {a:a,b:b,c:c});
+});
+E("u9-word-arrange-mc",9,["9.5"],1,"gen",function(){
+  var w=pick(["MAPLE","TIGER","BRISK","PLANT","WOLF","FROG","BEAR","CAMP","JUMP","QUIZ"]);
+  var n=w.length, key=u9fact(n);
+  return mcq("In how many different ways can the letters of the word "+w+" be arranged?",
+    ""+u9big(key),
+    [""+u9big(u9fact(n-1)),""+u9big(u9fact(n+1)),""+u9big(n*n)],
+    "The word "+w+" has "+n+" letters, all different, so the arrangements are the permutations of "+n+" objects: \\("+n+"! = <b>"+u9big(key)+"</b>\\).",
+    {w:w});
+});
+E("u9-two-group-cr",9,["9.12"],2,"gen",function(){
+  var CTX=[
+    function(n1,a,n2,b){ return "A library display will feature "+a+" novels chosen from "+n1+" available novels and "+b+" poetry collections chosen from "+n2+" available collections. How many different displays are possible?"; },
+    function(n1,a,n2,b){ return "A hockey coach must choose "+a+" forwards from "+n1+" forwards and "+b+" defence players from "+n2+" defence players. How many different selections are possible?"; },
+    function(n1,a,n2,b){ return "A committee is formed by choosing "+a+" junior students from "+n1+" juniors and "+b+" senior students from "+n2+" seniors. How many different committees are possible?"; }
+  ];
+  var n1=ri(6,10), a=ri(2,4), n2=ri(5,9), b=ri(2,3);
+  var c1=u9comb(n1,a), c2=u9comb(n2,b), ans=c1*c2;
+  return numq(pick(CTX)(n1,a,n2,b),
+    ans,0.001,
+    "The two choices are independent, so multiply the two combination counts: \\[ \\binom{"+n1+"}{"+a+"} \\times \\binom{"+n2+"}{"+b+"} = "+c1+" \\times "+c2+" = <b>"+u9big(ans)+"</b> \\]",
+    {n1:n1,a:a,n2:n2,b:b});
+});
+E("u9-not-adjacent-cr",9,["9.10"],3,"gen",function(){
+  var CTX=[
+    function(n){ return n+" friends line up for a photo. In how many arrangements do two particular friends, Ava and Ben, <b>not</b> stand next to each other?"; },
+    function(n){ return n+" different books are arranged in a row on a shelf. In how many arrangements are two particular books <b>not</b> placed side by side?"; },
+    function(n){ return "All finishing orders of "+n+" horses in a race are counted. In how many orders do two particular horses <b>not</b> finish in consecutive positions?"; }
+  ];
+  var n=pick([5,6,7]), total=u9fact(n), together=2*u9fact(n-1), ans=total-together;
+  return numq(pick(CTX)(n),
+    ans,0.001,
+    "Count every arrangement, then subtract the arrangements where the two are together. There are \\("+n+"! = "+u9big(total)+"\\) arrangements in total. Treating the pair as a single block gives "+(n-1)+" objects, which can be arranged in \\("+(n-1)+"! = "+u9big(u9fact(n-1))+"\\) ways, and the pair itself can be ordered in 2 ways, so the number with the two together is \\(2 \\times "+(n-1)+"! = "+u9big(together)+"\\). The number with the two apart is \\("+u9big(total)+" - "+u9big(together)+" = <b>"+u9big(ans)+"</b>\\).",
+    {n:n});
+});
+
+var CR_MARKS={"u1-divide-quotient":2,"u1-divide-result":2,"u1-end-behaviour":1,"u1-equation-from-graph":3,"u1-error-synthetic":2,"u1-find-coefficient":2,"u1-modelling":3,"u1-multiplicity-graph":1,"u1-remainder-point":1,"u1-remainder-value":1,"u1-which-factor":2,"u1-zeros-from-factors":1,"u2-full-equation":2,"u2-inv-domran":1,"u2-inv-equation":2,"u2-inv-figure":1,"u2-inv-restrict":2,"u2-refl-equation":1,"u2-refl-point":1,"u2-stretch-equation":2,"u2-stretch-identify":1,"u2-stretch-point":2,"u2-trans-describe":1,"u2-trans-equation":2,"u2-trans-point":1,"u2-trans-zeros":3,"u3-graphical-solve":1,"u3-intercept-solution":2,"u3-recover-f-value":3,"u3-sqrtf-evaluate":2,"u3-sqrtx-table":1,"u3-start-point":1,"u3-transform-domain-range":2,"u4-angle-from-ratio":2,"u4-approx-ratio":1,"u4-arc-compare":2,"u4-arc-length":2,"u4-circle-equation":1,"u4-circle-point-reasoning":3,"u4-coterminal":1,"u4-deg-to-rad":1,"u4-exact-special":1,"u4-one-radian":1,"u4-other-ratios":2,"u4-point-ratios-angle":2,"u4-rad-to-deg":1,"u4-ratio-problem":2,"u4-sketch-standard-position":1,"u4-solve-equation-approx":2,"u4-solve-equation-exact":2,"u5-amplitude-a":1,"u5-base-graph":1,"u5-characteristics":1,"u5-general-solution":2,"u5-graph-problem":2,"u5-key-points":2,"u5-model-build":3,"u5-model-conditions":3,"u5-period-b":1,"u5-phase-h":1,"u5-shift-k":1,"u5-solve-set":2,"u5-tan-features":1,"u5-which-solution":1,"u6-approx-solutions":2,"u6-exact-values":2,"u6-nonpermissible-basic":2,"u6-nonpermissible-identity":2,"u6-numeric-verify":1,"u6-proof-invalid-step":3,"u6-simplify-expression":2,"u6-solve-double-angle":2,"u6-solve-identity-sub":3,"u6-solve-quadratic":2,"u6-verify-solution":1,"u7-common-base-linear":2,"u7-common-base-radical":2,"u7-compare-models":3,"u7-compound-amount":2,"u7-compound-setup":1,"u7-growth-decay-amount":1,"u7-growth-decay-time":2,"u7-model-equation":2,"u7-model-from-data":4,"u7-sketch-key-points":1,"u7-solve-nocommon-base":2,"u7-transformed-graph":2,"u8-convert-form":1,"u8-estimate-approx":1,"u8-exact-value":1,"u8-extraneous":3,"u8-finance-periods":2,"u8-growth-time":2,"u8-inverse-graph":1,"u8-laws-equivalent":2,"u8-log-scales":2,"u8-model-log":3,"u8-sketch-log":1,"u8-solve-exp-logs":2,"u8-solve-log-eq":2,"u8-transformed-log":1,"u9-binomial-expand":2,"u9-binomial-term":2,"u9-comb-basic":2,"u9-comb-symmetry-solve":2,"u9-counting-organizers":1,"u9-factorial-notation":1,"u9-fcp-apply":1,"u9-identical-elements":2,"u9-pascal-next-row":1,"u9-patterns-coefficients":2,"u9-perm-basic":2,"u9-perm-constraints":3,"u9-perm-or-comb":2,"u9-perm-solve":2, "u1-largest-zero-cr": 3, "u1-tableau-step-cr": 2, "u2-find-stretch-cr": 3, "u2-inverse-points-cr": 3, "u2-reflection-equation-cr": 2, "u3-domain-from-quadratic-cr": 2, "u3-recover-coefficient-cr": 3, "u3-evaluate-transformed-cr": 3, "u3-shift-from-intercept-cr": 2, "u4-repair-solution-cr": 3, "u4-angle-measures-cr": 3, "u5-equation-evaluate-cr": 3, "u5-first-maximum-cr": 2, "u5-tan-asymptote-cr": 2, "u6-lost-solutions-cr": 3, "u6-coincidence-check-cr": 2, "u9-fcp-meal-mc": 1, "u9-word-arrange-mc": 1, "u9-two-group-cr": 3, "u9-not-adjacent-cr": 3};
 /* BANK-SRC-END */
 </script>
 
