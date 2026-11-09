@@ -1054,7 +1054,7 @@ E("u1-divide-result",1,["3.2"],2,"gen",function(){
 });
 
 /* ---------- 3.3: remainder theorem gives a point on the graph (L2) ---------- */
-E("u1-remainder-point",1,["3.3"],2,"gen",function(){
+E("u1-remainder-point",1,["3.3"],1,"gen",function(){
   var att=0, cf, a, R;
   while(att<200){
     att++;
@@ -1121,7 +1121,7 @@ E("u1-find-coefficient",1,["3.4"],2,"gen",function(){
 });
 
 /* ---------- 3.5: zeros from factored form (L2) ---------- */
-E("u1-zeros-from-factors",1,["3.5"],2,"gen",function(){
+E("u1-zeros-from-factors",1,["3.5"],1,"gen",function(){
   var att=0, roots, lead, S0, S1, S2, S3;
   function setS(arr){ var c=arr.slice().sort(function(x,y){ return x-y; }); return "\\(\\{"+c.join(", ")+"\\}\\)"; }
   while(att<200){
@@ -1150,7 +1150,7 @@ E("u1-zeros-from-factors",1,["3.5"],2,"gen",function(){
 });
 
 /* ---------- 3.9: zeros, roots and intercepts are the same values (L2) ---------- */
-E("u1-zeros-roots-intercepts",1,["3.9"],2,"gen",function(){
+E("u1-zeros-roots-intercepts",1,["3.9"],1,"gen",function(){
   var roots=shuffle([-5,-4,-3,-2,-1,1,2,3,4,5]).slice(0,3).sort(function(x,y){ return x-y; });
   var list=roots.join(", "), nlist=roots.map(function(r){ return -r; }).join(", ");
   var key="The roots of the corresponding polynomial equation are "+list+", and the x-intercepts of the graph are "+list+".";
@@ -1164,7 +1164,7 @@ E("u1-zeros-roots-intercepts",1,["3.9"],2,"gen",function(){
 });
 
 /* ---------- 3.7: roles of the constant term and leading coefficient (L2) ---------- */
-E("u1-constant-leading",1,["3.7"],2,"gen",function(){
+E("u1-constant-leading",1,["3.7"],1,"gen",function(){
   var att=0, deg, cf, a, d0, m;
   while(att<200){
     att++;
@@ -1185,7 +1185,7 @@ E("u1-constant-leading",1,["3.7"],2,"gen",function(){
 });
 
 /* ---------- 3.10: multiplicity behaviour read from a graph (L2) ---------- */
-E("u1-multiplicity-graph",1,["3.10"],2,"gen",function(){
+E("u1-multiplicity-graph",1,["3.10"],1,"gen",function(){
   var pair=shuffle([-4,-3,-2,-1,1,2,3,4]).slice(0,2), rd=pair[0], rs=pair[1];
   var a=pick([1,-1]);
   var cf=u1FromRoots(a,[[rd,2],[rs,1]]);
@@ -1399,7 +1399,7 @@ function u2setStr(pts){ /* a set of points as a math string, sorted by x then y 
 }
 
 /* ---------- inverses: 4.1 to 4.8 ---------- */
-E("u2-inv-which",2,["4.1"],2,"gen",function(){
+E("u2-inv-which",2,["4.1"],1,"gen",function(){
   var form=pick(["lin","sqrt"]),correct,why;
   if(form==="lin"){
     var m=pick([1,2,3,4,-2,-3,-4]),b=ri(-6,6);
@@ -1473,7 +1473,7 @@ E("u2-inv-equation",2,["4.5","4.6"],2,"gen",function(){
     "Swap \\(x\\) and \\(y\\), then solve: \\[ \\begin{aligned} x &= ("+u2xarg(h).replace("x","y")+")^2"+u2pm0(k)+" \\\\ x"+u2pm0(-k)+" &= ("+u2xarg(h).replace("x","y")+")^2 \\\\ \\sqrt{x"+u2pm0(-k)+"} &= "+u2xarg(h).replace("x","y")+" \\\\ y &= "+h+" + \\sqrt{x"+u2pm0(-k)+"} \\end{aligned} \\] The positive root is used because the restricted domain of \\(f\\) keeps the inverse on the branch \\(y \\geq "+h+"\\).",
     {shape:"quad",h:h,k:k});
 });
-E("u2-inv-domran",2,["4.7"],2,"gen",function(){
+E("u2-inv-domran",2,["4.7"],1,"gen",function(){
   var a,b,c,d,opts,tries=0;
   do{
     tries++;
@@ -1533,7 +1533,7 @@ E("u2-trans-describe",2,["4.13","4.14"],1,"gen",function(){
     "In \\(y = f(x) + k\\) and \\(y - k = f(x)\\), a positive \\(k\\) moves the graph up; in \\(y = f(x - h)\\), a positive \\(h\\) moves the graph right, because each input must be \\(h\\) larger to produce the same output. For "+eq+", the change is a translation of "+amt+" units "+dir+".",
     {form:form,amt:amt,dir:dir});
 });
-E("u2-trans-point",2,["4.15","4.16"],2,"gen",function(){
+E("u2-trans-point",2,["4.15","4.16"],1,"gen",function(){
   var h=pick([-7,-6,-5,-4,-3,-2,2,3,4,5,6,7]);
   var k=pick([-7,-6,-5,-4,-3,-2,2,3,4,5,6,7]);
   var x0=ri(-8,8),y0=ri(-8,8);
@@ -1549,7 +1549,7 @@ E("u2-trans-point",2,["4.15","4.16"],2,"gen",function(){
     "The equation "+eq+" applies the mapping \\((x, y)\\) to \\((x"+u2pm(h)+", y"+u2pm(k)+")\\). So \\("+u2pt(x0,y0)+"\\) maps to \\("+u2pt(x0+h,y0+k)+"\\) . Watch the horizontal sign: in the form \\(y - k = f(x - h)\\) the graph shifts by \\(+h\\) horizontally, even though the equation shows a subtraction inside \\(f\\).",
     {h:h,k:k,x0:x0,y0:y0});
 });
-E("u2-trans-equation",2,["4.17","4.15"],2,"gen",function(){
+E("u2-trans-equation",2,["4.17","4.15"],1,"gen",function(){
   var base=pick(["sq","cu","abs","sqrt","rec"]);
   var sx=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
   var sy=pick([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6]);
@@ -1622,7 +1622,7 @@ E("u2-stretch-point",2,["4.20","4.21"],2,"gen",function(){
     "The mapping for "+eq+" sends \\((x, y)\\) to \\((x \\div "+u2coefStr(B[0],B[1])+", "+u2coefStr(A[0],A[1])+"y)\\): the input factor divides the \\(x\\)-coordinate, and the outside coefficient multiplies the \\(y\\)-coordinate. So \\("+u2pt(x0,y0)+"\\) maps to "+correct+" .",
     {A:A,B:B,x0:x0,y0:y0});
 });
-E("u2-stretch-equation",2,["4.22"],2,"gen",function(){
+E("u2-stretch-equation",2,["4.22"],1,"gen",function(){
   var base=pick(["sq","cu","sqrt"]);
   var c=pick([-4,-3,-2,-1,1,2,3,4]);
   var shape=ri(0,1);
@@ -1758,7 +1758,7 @@ E("u2-refl-point",2,["4.40","4.45"],1,"gen",function(){
     "Use the coordinate rule: "+rule+". Applying it to \\("+u2pt(x,y)+"\\) gives "+correct+" .",
     {x:x,y:y,axis:axis});
 });
-E("u2-refl-equation",2,["4.41","4.42","4.43","4.44"],2,"gen",function(){
+E("u2-refl-equation",2,["4.41","4.42","4.43","4.44"],1,"gen",function(){
   var t=ri(1,3),axis=pick(["x","y"]);
   var f,negF,fNeg,negFNeg;
   if(t===1){
@@ -2014,7 +2014,7 @@ E("u3-recover-f-value",3,["4.12"],3,"gen",function(){
     {p:p,q:q,tv:tv,m:m});
 });
 
-E("u3-intercept-statement",3,["4.25"],2,"gen",function(){
+E("u3-intercept-statement",3,["4.25"],1,"gen",function(){
   var form=pick([1,2]),b=ri(2,6),a,tv,inn;
   if(form===1){a=ri(1,b*b-1);tv=b*b-a;inn=a;}
   else{a=ri(1,9);tv=b*b+a;inn=-a;}
@@ -2262,7 +2262,7 @@ E("u4-rad-to-deg", 4, ["7.6"], 1, "gen", function () {
 });
 
 /* ---- 7.7, 7.8: coterminal angles and their general form ---- */
-E("u4-coterminal", 4, ["7.7", "7.8"], 2, "gen", function () {
+E("u4-coterminal", 4, ["7.7", "7.8"], 1, "gen", function () {
   var mode = pick(["find", "find", "form"]);
   if (mode === "find") {
     if (Math.random() < 0.5) {
@@ -2305,7 +2305,7 @@ E("u4-coterminal", 4, ["7.7", "7.8"], 2, "gen", function () {
 });
 
 /* ---- 7.9: arc length a = r(theta), solved for each of the three quantities ---- */
-E("u4-arc-length", 4, ["7.9"], 2, "gen", function () {
+E("u4-arc-length", 4, ["7.9"], 1, "gen", function () {
   var mode = pick(["a", "a", "r", "t", "deg"]);
   if (mode === "a") {
     var r = ri(3, 30), th = ri(4, 31) / 10, a = r * th;
@@ -2337,7 +2337,7 @@ E("u4-arc-length", 4, ["7.9"], 2, "gen", function () {
 });
 
 /* ---- 7.10, 7.11: the equation of a circle centred at the origin ---- */
-E("u4-circle-equation", 4, ["7.10", "7.11"], 2, "gen", function () {
+E("u4-circle-equation", 4, ["7.10", "7.11"], 1, "gen", function () {
   var mode = pick(["r", "diam", "fromEq", "point", "sqrt"]);
   if (mode === "r") {
     var r = ri(2, 15), corr = "\\(x^2 + y^2 = " + (r * r) + "\\)";
@@ -2407,7 +2407,7 @@ E("u4-point-ratios-angle", 4, ["7.12", "7.17"], 2, "gen", function () {
 });
 
 /* ---- 7.13: approximate value of a ratio (calculator work, 3 decimal places) ---- */
-E("u4-approx-ratio", 4, ["7.13"], 2, "gen", function () {
+E("u4-approx-ratio", 4, ["7.13"], 1, "gen", function () {
   var kind = pick(["sin", "cos", "tan"]);
   if (Math.random() < 0.5) {
     var deg = ri(12, 168);
@@ -2429,7 +2429,7 @@ E("u4-approx-ratio", 4, ["7.13"], 2, "gen", function () {
 });
 
 /* ---- 7.14: exact value of a ratio at a special angle ---- */
-E("u4-exact-special", 4, ["7.14"], 2, "gen", function () {
+E("u4-exact-special", 4, ["7.14"], 1, "gen", function () {
   var kind = pick(u4KINDS), d = pick(u4DEGS), ex = u4exact(kind, d);
   while (!ex) { d = pick(u4DEGS); ex = u4exact(kind, d); }
   var co = { sin: "cos", cos: "sin", tan: "cot", cot: "tan", csc: "sec", sec: "csc" }[kind];
@@ -2451,7 +2451,7 @@ E("u4-exact-special", 4, ["7.14"], 2, "gen", function () {
 });
 
 /* ---- 7.16: angles in a domain from a given ratio value, quadrant specified ---- */
-E("u4-angle-from-ratio", 4, ["7.16"], 2, "gen", function () {
+E("u4-angle-from-ratio", 4, ["7.16"], 1, "gen", function () {
   var kind = pick(["sin", "cos", "tan"]);
   var signs = { sin: [1, 1, -1, -1], cos: [1, -1, -1, 1], tan: [1, -1, 1, -1] };
   if (Math.random() < 0.55) {
@@ -2899,7 +2899,7 @@ E("u5-shift-k",5,["7.24"],1,"gen",function(){
     "The base function takes values from -1 to 1. Shifting "+(k>0?"up":"down")+" by "+Math.abs(k)+" moves the whole band: the lowest value is \\(-1 + ("+k+") = "+(k-1)+"\\) and the highest is \\(1 + ("+k+") = "+(k+1)+"\\). The range is <b>\\(["+(k-1)+", "+(k+1)+"]\\)</b>.",
     {trig:trig,k:k,ask:ask});
 });
-E("u5-period-b",5,["7.23"],2,"gen",function(){
+E("u5-period-b",5,["7.23"],1,"gen",function(){
   var trig=pick(["sin","cos"]);
   if(Math.random()<0.25){
     var bR=pick([2,3,4,0.5]),per,corr,dis;
@@ -2923,7 +2923,7 @@ E("u5-period-b",5,["7.23"],2,"gen",function(){
     "The period is set by the coefficient of \\(x\\): \\[ \\begin{aligned} \\text{period} &= \\frac{360^\\circ}{b} \\\\ &= \\frac{360^\\circ}{"+(b===0.5?"\\frac{1}{2}":(b===1/3?"\\frac{1}{3}":b))+"} \\\\ &= "+P+"^\\circ \\end{aligned} \\] The amplitude and the vertical shift do not change the period. The period is <b>"+P+"°</b>.",
     {trig:trig,b:b,a:a,k:k,mode:"deg"});
 });
-E("u5-phase-h",5,["7.25"],2,"gen",function(){
+E("u5-phase-h",5,["7.25"],1,"gen",function(){
   var trig=pick(["sin","cos"]),h=pick([15,30,45,60,90,-15,-30,-45,-60,-90]),b=pick([1,2,3]);
   var bLab=(b===1?"":""+b),A=Math.abs(h);
   var dir=(h>0?"right":"left"),odir=(h>0?"left":"right");
@@ -2934,7 +2934,7 @@ E("u5-phase-h",5,["7.25"],2,"gen",function(){
     "In the form \\(\\"+trig+" "+(b===1?"":b)+"(x - h)\\), the value \\(h = "+h+"^\\circ\\) is the phase shift. A positive \\(h\\) moves the graph to the right, and a negative \\(h\\) moves it to the left. Here the graph is <b>shifted "+A+"° to the "+dir+"</b>.",
     {trig:trig,h:h,b:b});
 });
-E("u5-characteristics",5,["7.27"],2,"gen",function(){
+E("u5-characteristics",5,["7.27"],1,"gen",function(){
   var trig=pick(["sin","cos"]),a=pick([2,3,4]),b=pick([1,2]),h=pick([-60,-30,0,30,60]),k=pick([-2,-1,0,1,2,3]);
   var ask=pick(["amplitude","period","midline","range","phase"]);
   var eq=u5Eq(a,trig,(b===1?"":""+b),h,k),fn=u5Fn(a,trig,b,h,k);
@@ -2986,7 +2986,7 @@ E("u5-eq-from-graph",5,["7.28"],2,"gen",function(){
   q.figure=u5Plot(u5Fn(a,trig,b,0,k),0,720,Math.min(k-a-1,-2),Math.max(k+a+1,2),{gx:90,gy:1,labelX:true,labelY:true});
   return q;
 });
-E("u5-key-points",5,["7.26"],2,"gen",function(){
+E("u5-key-points",5,["7.26"],1,"gen",function(){
   var trig=pick(["sin","cos"]),a=pick([2,3,4,5]),b=pick([1,2,3]),h=pick([-30,0,30,60]),k=pick([-3,-2,-1,0,1,2,3]);
   var eq=u5Eq(a,trig,(b===1?"":""+b),h,k),ask=pick(["max","min","firstmax"]);
   if(ask==="max"){
@@ -3055,7 +3055,7 @@ E("u5-tan-features",5,["7.32","7.33"],2,"gen",function(){
     "Tangent is undefined where its argument equals \\(90^\\circ + 180^\\circ n\\). Solving \\("+b+"(x - "+h+"^\\circ) = 90^\\circ + 180^\\circ n\\) gives \\(x = "+fmt(st)+"^\\circ + "+fmt(step)+"^\\circ n\\), and these values are excluded from the domain: <b>"+corr+"</b>.",
     {b:b,s:s,h:h,ask:ask});
 });
-E("u5-which-solution",5,["7.36","7.35"],2,"gen",function(){
+E("u5-which-solution",5,["7.36","7.35"],1,"gen",function(){
   var trig=pick(["sin","cos"]);
   if(Math.random()<0.55){
     var b=pick([1,2]);
@@ -3772,7 +3772,7 @@ E("u6-solve-identity-sub", 6, ["7.34"], 2, "gen", function () {
 });
 
 /* ---- 7.35: approximate solutions from a graphed intersection ---- */
-E("u6-approx-solutions", 6, ["7.35"], 2, "gen", function () {
+E("u6-approx-solutions", 6, ["7.35"], 1, "gen", function () {
   var rad = Math.random() < 0.45;
   var fam = pick(["sinP", "sinN", "cos", "tanP", "tanN", "sin2"]);
   function r1(x) { return Math.round(x * 10) / 10; }
@@ -3814,7 +3814,7 @@ E("u6-approx-solutions", 6, ["7.35"], 2, "gen", function () {
 });
 
 /* ---- 7.42: verify an identity numerically for a given value ---- */
-E("u6-numeric-verify", 6, ["7.42"], 2, "gen", function () {
+E("u6-numeric-verify", 6, ["7.42"], 1, "gen", function () {
   var rad = Math.random() < 0.45;
   var degs = [25, 40, 55, 70, 115, 140, 160, 200, 215, 290, 325];
   var rads = [0.5, 0.9, 1.2, 2.0, 2.6, 3.6, 4.4, 5.5];
@@ -3841,7 +3841,7 @@ E("u6-numeric-verify", 6, ["7.42"], 2, "gen", function () {
 });
 
 /* ---- 7.40: judge an identity from a graph comparison ---- */
-E("u6-graphical-validity", 6, ["7.40"], 2, "gen", function () {
+E("u6-graphical-validity", 6, ["7.40"], 1, "gen", function () {
   var v = pick(["\\theta", "\\theta", "x"]);
   var rad = Math.random() < 0.5;
   var T = pick([
@@ -4571,7 +4571,7 @@ E("u7-solve-nocommon-base",7,["4.28"],2,"gen",function(){
     {fam:fam,a:a3,m:m3,T:T});
 });
 
-E("u7-growth-decay-amount",7,["4.29"],2,"gen",function(){
+E("u7-growth-decay-amount",7,["4.29"],1,"gen",function(){
   var fam=pick(["half","half","double","pct"]);
   if(fam==="half"){
     var ctx=pick([
@@ -4660,7 +4660,7 @@ E("u7-growth-decay-time",7,["4.29"],2,"gen",function(){
     {fam:fam,f:f2,j:j3});
 });
 
-E("u7-model-equation",7,["4.30"],2,"gen",function(){
+E("u7-model-equation",7,["4.30"],1,"gen",function(){
   var fam=pick(["period","period","pct"]);
   if(fam==="period"){
     var mode=pick(["double","triple","halve"]);
@@ -4702,7 +4702,7 @@ E("u7-model-equation",7,["4.30"],2,"gen",function(){
     {fam:fam,r:r,A0:A02});
 });
 
-E("u7-compound-amount",7,["4.31"],2,"gen",function(){
+E("u7-compound-amount",7,["4.31"],1,"gen",function(){
   var spec=pick([
     {lab:"compounded annually",per:1,rates:[3,4,5,6,7,8,9,10],years:[2,3,4]},
     {lab:"compounded annually",per:1,rates:[3,4,5,6,7,8,9,10],years:[2,3,4]},
@@ -4884,7 +4884,7 @@ E("u7-transformed-graph",7,["4.36"],2,"gen",function(){
   q2.figure=fig;return q2;
 });
 
-E("u7-characteristics",7,["4.48"],2,"gen",function(){
+E("u7-characteristics",7,["4.48"],1,"gen",function(){
   var ask=pick(["true","asym","xint","range"]);
   if(ask==="true"){
     var a=pick([2,3,4,5]),c=pick([[2,1],[3,1],[1,2],[1,3],[2,3],[3,2]]),cv=c[0]/c[1];
@@ -5150,7 +5150,7 @@ E("u8-sketch-log",8,["4.38"],1,"gen",function(){
     (inc ? "The base \\(" + cs + "\\) is greater than \\(1\\), so larger inputs need larger exponents: the graph rises." : "The base \\(" + cs + "\\) is between \\(0\\) and \\(1\\), so larger inputs need smaller exponents: the graph falls."), {ask:ask, c:cs});
 });
 
-E("u8-estimate-approx",8,["1.4","1.8"],2,"gen",function(){
+E("u8-estimate-approx",8,["1.4","1.8"],1,"gen",function(){
   if (Math.random() < 0.5){
     var b = pick([2,3,5,10]);
     var k = b === 10 ? ri(1,2) : ri(1,3);
@@ -5185,7 +5185,7 @@ E("u8-estimate-approx",8,["1.4","1.8"],2,"gen",function(){
     ans, 0.02, "Rewrite the argument using the given value. " + why, {mode:"given", bb:bb, m:m, form:form});
 });
 
-E("u8-laws-illustrate",8,["1.5","1.6"],2,"gen",function(){
+E("u8-laws-illustrate",8,["1.5","1.6"],1,"gen",function(){
   var b = pick([2,3,5,10]);
   var law = pick(["product","quotient","power"]);
   var eq, m, n, p;
@@ -5330,7 +5330,7 @@ E("u8-solve-log-eq",8,["4.32"],2,"gen",function(){
     {mode:"sum", b:T.b, k:T.k, a:T.a});
 });
 
-E("u8-log-scales",8,["4.34"],2,"gen",function(){
+E("u8-log-scales",8,["4.34"],1,"gen",function(){
   var mode = pick(["rdiff","rinv","pdiff","pinv"]);
   if (mode === "rdiff"){
     var M2 = ri(4,7), d = ri(1,4), M1 = M2 + d;
@@ -5846,7 +5846,7 @@ E("u9-counting-organizers",9,["9.1","9.4"],1,"gen",function(){
 });
 
 /* ---------- 9.3: the Fundamental Counting Principle (L2) ---------- */
-E("u9-fcp-apply",9,["9.3"],2,"gen",function(){
+E("u9-fcp-apply",9,["9.3"],1,"gen",function(){
   var mode=pick(["meal","code","plate","stages","mealMC"]);
   if(mode==="mealMC"){
     var f=[ri(2,4),ri(3,5),ri(2,4)], key=f[0]*f[1]*f[2];
@@ -5996,7 +5996,7 @@ E("u9-factorial-notation",9,["9.5"],1,"gen",function(){
 });
 
 /* ---------- 9.5, 9.6: permutations in context (L2) ---------- */
-E("u9-perm-basic",9,["9.5","9.6"],2,"gen",function(){
+E("u9-perm-basic",9,["9.5","9.6"],1,"gen",function(){
   var mode=pick(["all","all","taken","taken","takenMC"]);
   if(mode==="all"){
     var c=pick([
@@ -6074,7 +6074,7 @@ E("u9-perm-solve",9,["9.8"],2,"gen",function(){
 });
 
 /* ---------- 9.9: permutations with identical elements (L2) ---------- */
-E("u9-identical-elements",9,["9.9"],2,"gen",function(){
+E("u9-identical-elements",9,["9.9"],1,"gen",function(){
   var mode=pick(["tiles","tiles","compare","beads"]);
   if(mode==="compare"){
     var tot=pick([5,6,7]), rc=pick([2,3]);
