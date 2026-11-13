@@ -920,7 +920,7 @@ function balDp(keyStr,ds){
   return ds.map(function(s,i){return padTo(s,best[i]);});
 }
 
-E("u1-divide-quotient",1,["3.2"],1,"gen",function(){
+E("u1-divide-quotient",1,["3.2"],2,"gen",function(){
   var att=0, cf, a, sy;
   while(att<200){
     att++;
@@ -1008,7 +1008,7 @@ E("u1-end-behaviour",1,["3.8"],1,"gen",function(){
 });
 
 /* ---------- 3.1: how synthetic division relates to long division (L2, var) ---------- */
-E("u1-synthetic-relation",1,["3.1"],2,"var",varset([
+E("u1-synthetic-relation",1,["3.1"],1,"var",varset([
   function(){
     var a=pick([-3,-2,2,3]);
     var cf=[pick([1,2,3]), ri(-8,8), ri(-8,8), ri(-8,8)];
@@ -1656,7 +1656,7 @@ E("u2-stretch-identify",2,["4.18","4.19"],1,"gen",function(){
       :"Changing the input of a function stretches the graph horizontally: to land on the same output, each \\(x\\)-coordinate is multiplied by \\("+u2coefStr(n,d)+"\\), so each point \\((x, y)\\) maps to \\(("+u2scaleExpr(n,d,"x")+", y)\\) . Notice the equation divides \\(x\\) by that factor, which is why the direction surprises many students.",
     {base:base,c:c,n:n,d:d,dir:dir});
 });
-E("u2-stretch-point",2,["4.20","4.21"],2,"gen",function(){
+E("u2-stretch-point",2,["4.20","4.21"],1,"gen",function(){
   var A=pick([[2,1],[3,1],[1,2],[1,3]]);
   var B=pick([[2,1],[3,1],[1,2],[1,3]]);
   var X=pick([-3,-2,-1,1,2,3]),Y=pick([-3,-2,-1,1,2,3]);
@@ -1983,7 +1983,7 @@ E("u3-sqrtx-table",3,["4.10"],1,"gen",function(){
     {v:v,shape:shape});
 });
 
-E("u3-start-point",3,["4.11"],2,"gen",function(){
+E("u3-start-point",3,["4.11"],1,"gen",function(){
   var a=pick([-3,-2,-1,1,2,3]),b=pick([1,2,4]),h=0,k=0,t=0;
   while((h===0||k===0)&&t<60){h=ri(-6,6);k=ri(-6,6);t++;}
   var eq=u3eqnT(a,b,h,k);
@@ -1994,7 +1994,7 @@ E("u3-start-point",3,["4.11"],2,"gen",function(){
     {a:a,b:b,h:h,k:k});
 });
 
-E("u3-transform-domain-range",3,["4.11"],2,"gen",function(){
+E("u3-transform-domain-range",3,["4.11"],1,"gen",function(){
   var a=1,b=1,h=2,k=3,t=0;
   do{a=pick([-3,-2,-1,1,2,3]);b=pick([1,2,4]);h=ri(-6,6);k=ri(-6,6);t++;}
   while((h===0||k===0||Math.abs(h)===Math.abs(k))&&t<80);
@@ -4945,7 +4945,7 @@ E("u7-growth-decay-amount",7,["4.29"],1,"gen",function(){
     {fam:fam,f:f,n:n,A0:A03});
 });
 
-E("u7-growth-decay-time",7,["4.29"],2,"gen",function(){
+E("u7-growth-decay-time",7,["4.29"],1,"gen",function(){
   var fam=pick(["half","half","double","triple","pct"]);
   if(fam==="half"){
     var ctx=pick([
@@ -5627,7 +5627,7 @@ E("u8-solve-exp-logs",8,["4.28"],2,"gen",function(){
     "The bases cannot be made the same, so take the common logarithm of both sides and use the power law to bring the exponent down: " + steps, {b:b, c:c});
 });
 
-E("u8-growth-time",8,["4.29"],2,"gen",function(){
+E("u8-growth-time",8,["4.29"],1,"gen",function(){
   if (Math.random() < 0.55){
     var g = pick([2,3,4]), k = ri(2,6), L = pick([5,10,15,20,30]);
     var unit = pick(["minutes","hours"]);
