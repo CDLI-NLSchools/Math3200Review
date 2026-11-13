@@ -5726,7 +5726,56 @@ E("u8-transformed-log",8,["4.39","4.49"],2,"gen",function(){
   var h = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
   var k = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
   while (k === h || k === -h) k = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
-  var ask = pick(["asym","domain","range","xint","dir"]);
+  var ask = pick(["xint"]);
+  function fnStr(aa, hh, kk){
+    var s = "y = ";
+    if (aa === -1) s += "-";
+    else if (aa !== 1) s += aa;
+    s += "\\log_{" + b + "} ";
+    s += hh === 0 ? "x" : (hh > 0 ? "(x - " + hh + ")" : "(x + " + (-hh) + ")");
+    if (kk > 0) s += " + " + kk; else if (kk < 0) s += " - " + (-kk);
+    return s;
+  }
+  var fn = fnStr(a, h, k);
+  var argS = h > 0 ? "(x - " + h + ")" : (h < 0 ? "(x + " + (-h) + ")" : "x");
+  if (ask === "xint"){
+    var j = pick([-2,-1,1,2]);
+    var kk2 = -a * j;
+    var fn2 = fnStr(a, h, kk2);
+    var ans = h + Math.pow(b, j);
+    return numq("What is the \\(x\\)-intercept of the graph of \\(" + fn2 + "\\)?", ans, 0.01,
+      "Set \\(y = 0\\): \\[ \\begin{aligned} " + (a === -1 ? "-" : "" + a) + u8L(b, argS) + u8sgn(kk2) + " &= 0 \\\\ " + u8L(b, argS) + " &= " + j + " \\\\ " + argS + " &= " + b + "^{" + j + "} = " + fmt(Math.pow(b, j), 3) + " \\\\ x &= " + fmt(ans, 3) + " \\end{aligned} \\] The intercept is \\(x = " + fmt(ans, 3) + "\\).",
+      {ask:ask, b:b});
+  }
+  if (ask === "asym") return mcq("What is the vertical asymptote of the graph of \\(" + fn + "\\)?",
+    "\\(x = " + h + "\\)",
+    ["\\(x = " + (-h) + "\\)", "\\(x = " + k + "\\)", "\\(y = " + k + "\\)"],
+    "The logarithm is defined only when its argument is positive: \\(" + argS + " > 0\\), so \\(x > " + h + "\\). The graph approaches the line \\(x = " + h + "\\) without ever touching it.",
+    {ask:ask, b:b, h:h});
+  if (ask === "domain") return mcq("What is the domain of \\(" + fn + "\\)?",
+    "\\(x > " + h + "\\)",
+    ["\\(x < " + h + "\\)", "\\(x > " + k + "\\)", "all real numbers"],
+    "The argument of the logarithm must be positive: \\(" + argS + " > 0\\) gives \\(x > " + h + "\\).",
+    {ask:ask, b:b, h:h});
+  if (ask === "range") return mcq("What is the range of \\(" + fn + "\\)?",
+    "all real numbers",
+    ["\\(y > " + k + "\\)", "\\(y < " + k + "\\)", "positive real numbers only"],
+    "As \\(" + argS + "\\) approaches \\(0\\), the logarithm falls without bound, and as \\(" + argS + "\\) grows, it rises without bound. The vertical shift and stretch do not bound the values, so every real number occurs.",
+    {ask:ask, b:b});
+  return mcq("The graph of \\(" + fn + "\\) is",
+    a > 0 ? "increasing" : "decreasing",
+    [a > 0 ? "decreasing" : "increasing", "constant", "first increasing, then decreasing"],
+    (a > 0 ? "The coefficient \\(" + a + "\\) is positive and the base \\(" + b + "\\) is greater than \\(1\\), so larger inputs give larger values." : "The coefficient \\(" + a + "\\) is negative, so the base graph is reflected: larger inputs give smaller values."),
+    {ask:ask, b:b});
+});
+
+E("u8-transformed-log-features",8,["4.39","4.49"],1,"gen",function(){
+  var b = pick([2,3,5,10]);
+  var a = pick([-3,-2,-1,1,2,3]);
+  var h = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var k = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  while (k === h || k === -h) k = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+  var ask = pick(["asym","domain","range","dir"]);
   function fnStr(aa, hh, kk){
     var s = "y = ";
     if (aa === -1) s += "-";
@@ -6779,7 +6828,7 @@ E("u9-not-adjacent-cr",9,["9.10"],3,"gen",function(){
     {n:n});
 });
 
-var CR_MARKS={"u1-divide-quotient":2,"u1-divide-result":2,"u1-end-behaviour":1,"u1-equation-from-graph":3,"u1-error-synthetic":2,"u1-find-coefficient":2,"u1-modelling":3,"u1-multiplicity-graph":1,"u1-remainder-point":1,"u1-remainder-value":1,"u1-which-factor":2,"u1-zeros-from-factors":1,"u2-full-equation":2,"u2-inv-domran":1,"u2-inv-equation":2,"u2-inv-figure":1,"u2-inv-restrict":2,"u2-refl-equation":1,"u2-refl-point":1,"u2-stretch-equation":2,"u2-stretch-identify":1,"u2-stretch-point":2,"u2-trans-describe":1,"u2-trans-equation":2,"u2-trans-point":1,"u2-trans-zeros":3,"u3-graphical-solve":1,"u3-intercept-solution":2,"u3-recover-f-value":3,"u3-sqrtf-evaluate":2,"u3-sqrtx-table":1,"u3-start-point":1,"u3-transform-domain-range":2,"u4-angle-from-ratio":2,"u4-approx-ratio":1,"u4-arc-compare":2,"u4-arc-length":2,"u4-circle-equation":1,"u4-circle-point-reasoning":3,"u4-coterminal":1,"u4-deg-to-rad":1,"u4-exact-special":1,"u4-one-radian":1,"u4-other-ratios":2,"u4-point-ratios-angle":2,"u4-rad-to-deg":1,"u4-ratio-problem":2,"u4-sketch-standard-position":1,"u4-solve-equation-approx":2,"u4-solve-equation-exact":2,"u5-amplitude-a":1,"u5-base-graph":1,"u5-characteristics":1,"u5-general-solution":2,"u5-graph-problem":2,"u5-key-points":2,"u5-model-build":3,"u5-model-conditions":3,"u5-period-b":1,"u5-phase-h":1,"u5-shift-k":1,"u5-solve-set":2,"u5-tan-features":1,"u5-which-solution":1,"u6-approx-solutions":2,"u6-exact-values":2,"u6-nonpermissible-basic":2,"u6-nonpermissible-identity":2,"u6-numeric-verify":1,"u6-proof-invalid-step":3,"u6-simplify-expression":2,"u6-solve-double-angle":2,"u6-solve-identity-sub":3,"u6-solve-quadratic":2,"u6-verify-solution":1,"u7-common-base-linear":2,"u7-common-base-radical":2,"u7-compare-models":3,"u7-compound-amount":2,"u7-compound-setup":1,"u7-growth-decay-amount":1,"u7-growth-decay-time":2,"u7-model-equation":2,"u7-model-from-data":4,"u7-sketch-key-points":1,"u7-solve-nocommon-base":2,"u7-transformed-graph":2,"u8-convert-form":1,"u8-estimate-approx":1,"u8-exact-value":1,"u8-extraneous":3,"u8-finance-periods":2,"u8-growth-time":2,"u8-inverse-graph":1,"u8-laws-equivalent":2,"u8-log-scales":2,"u8-model-log":3,"u8-sketch-log":1,"u8-solve-exp-logs":2,"u8-solve-log-eq":2,"u8-transformed-log":1,"u9-binomial-expand":2,"u9-binomial-term":2,"u9-comb-basic":2,"u9-comb-symmetry-solve":2,"u9-counting-organizers":1,"u9-factorial-notation":1,"u9-fcp-apply":1,"u9-identical-elements":2,"u9-pascal-next-row":1,"u9-patterns-coefficients":2,"u9-perm-basic":2,"u9-perm-constraints":3,"u9-perm-or-comb":2,"u9-perm-solve":2, "u1-largest-zero-cr": 3, "u1-tableau-step-cr": 2, "u2-find-stretch-cr": 3, "u2-inverse-points-cr": 3, "u2-reflection-equation-cr": 2, "u3-domain-from-quadratic-cr": 2, "u3-recover-coefficient-cr": 3, "u3-evaluate-transformed-cr": 3, "u3-shift-from-intercept-cr": 2, "u4-repair-solution-cr": 3, "u4-angle-measures-cr": 3, "u5-equation-evaluate-cr": 3, "u5-first-maximum-cr": 2, "u5-tan-asymptote-cr": 2, "u6-lost-solutions-cr": 3, "u6-coincidence-check-cr": 2, "u9-fcp-meal-mc": 1, "u9-word-arrange-mc": 1, "u9-two-group-cr": 3, "u9-not-adjacent-cr": 3, "u7-traits-match-cr": 2, "u7-graph-point-value-cr": 3};
+var CR_MARKS={"u1-divide-quotient":2,"u1-divide-result":2,"u1-end-behaviour":1,"u1-equation-from-graph":3,"u1-error-synthetic":2,"u1-find-coefficient":2,"u1-modelling":3,"u1-multiplicity-graph":1,"u1-remainder-point":1,"u1-remainder-value":1,"u1-which-factor":2,"u1-zeros-from-factors":1,"u2-full-equation":2,"u2-inv-domran":1,"u2-inv-equation":2,"u2-inv-figure":1,"u2-inv-restrict":2,"u2-refl-equation":1,"u2-refl-point":1,"u2-stretch-equation":2,"u2-stretch-identify":1,"u2-stretch-point":2,"u2-trans-describe":1,"u2-trans-equation":2,"u2-trans-point":1,"u2-trans-zeros":3,"u3-graphical-solve":1,"u3-intercept-solution":2,"u3-recover-f-value":3,"u3-sqrtf-evaluate":2,"u3-sqrtx-table":1,"u3-start-point":1,"u3-transform-domain-range":2,"u4-angle-from-ratio":2,"u4-approx-ratio":1,"u4-arc-compare":2,"u4-arc-length":2,"u4-circle-equation":1,"u4-circle-point-reasoning":3,"u4-coterminal":1,"u4-deg-to-rad":1,"u4-exact-special":1,"u4-one-radian":1,"u4-other-ratios":2,"u4-point-ratios-angle":2,"u4-rad-to-deg":1,"u4-ratio-problem":2,"u4-sketch-standard-position":1,"u4-solve-equation-approx":2,"u4-solve-equation-exact":2,"u5-amplitude-a":1,"u5-base-graph":1,"u5-characteristics":1,"u5-general-solution":2,"u5-graph-problem":2,"u5-key-points":2,"u5-model-build":3,"u5-model-conditions":3,"u5-period-b":1,"u5-phase-h":1,"u5-shift-k":1,"u5-solve-set":2,"u5-tan-features":1,"u5-which-solution":1,"u6-approx-solutions":2,"u6-exact-values":2,"u6-nonpermissible-basic":2,"u6-nonpermissible-identity":2,"u6-numeric-verify":1,"u6-proof-invalid-step":3,"u6-simplify-expression":2,"u6-solve-double-angle":2,"u6-solve-identity-sub":3,"u6-solve-quadratic":2,"u6-verify-solution":1,"u7-common-base-linear":2,"u7-common-base-radical":2,"u7-compare-models":3,"u7-compound-amount":2,"u7-compound-setup":1,"u7-growth-decay-amount":1,"u7-growth-decay-time":2,"u7-model-equation":2,"u7-model-from-data":4,"u7-sketch-key-points":1,"u7-solve-nocommon-base":2,"u7-transformed-graph":2,"u8-convert-form":1,"u8-estimate-approx":1,"u8-exact-value":1,"u8-extraneous":3,"u8-finance-periods":2,"u8-growth-time":2,"u8-inverse-graph":1,"u8-laws-equivalent":2,"u8-log-scales":2,"u8-model-log":3,"u8-sketch-log":1,"u8-solve-exp-logs":2,"u8-solve-log-eq":2,"u8-transformed-log":1,"u8-transformed-log-features":1,"u9-binomial-expand":2,"u9-binomial-term":2,"u9-comb-basic":2,"u9-comb-symmetry-solve":2,"u9-counting-organizers":1,"u9-factorial-notation":1,"u9-fcp-apply":1,"u9-identical-elements":2,"u9-pascal-next-row":1,"u9-patterns-coefficients":2,"u9-perm-basic":2,"u9-perm-constraints":3,"u9-perm-or-comb":2,"u9-perm-solve":2, "u1-largest-zero-cr": 3, "u1-tableau-step-cr": 2, "u2-find-stretch-cr": 3, "u2-inverse-points-cr": 3, "u2-reflection-equation-cr": 2, "u3-domain-from-quadratic-cr": 2, "u3-recover-coefficient-cr": 3, "u3-evaluate-transformed-cr": 3, "u3-shift-from-intercept-cr": 2, "u4-repair-solution-cr": 3, "u4-angle-measures-cr": 3, "u5-equation-evaluate-cr": 3, "u5-first-maximum-cr": 2, "u5-tan-asymptote-cr": 2, "u6-lost-solutions-cr": 3, "u6-coincidence-check-cr": 2, "u9-fcp-meal-mc": 1, "u9-word-arrange-mc": 1, "u9-two-group-cr": 3, "u9-not-adjacent-cr": 3, "u7-traits-match-cr": 2, "u7-graph-point-value-cr": 3};
 /* BANK-SRC-END */
 </script>
 
